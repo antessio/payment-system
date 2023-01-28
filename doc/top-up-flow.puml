@@ -1,0 +1,52 @@
+@startuml
+
+actor User as u
+boundary "Customer Gateway" as cg
+participant Wallet as w
+participant "Top-up" as tu
+participant "Bank Account" as ba
+participant "Notification" as n
+queue "Message Broker" as mb
+boundary "Bank Gateway" as bg
+actor Bank as b
+
+
+u->cg: top-up wallet from bank account
+cg -> tu: top-up wallet from bank account
+activate tu
+tu -> tu: create top-up from bank to wallet
+tu --> mb: top-up created
+deactivate tu
+
+...
+
+mb --> tu: top-up created
+activate tu
+tu -> ba: bank transfer
+activate ba
+ba -> tu: creation in progress
+deactivate ba
+tu --> mb: top-up processing
+deactivate tu
+...
+b -> bg: transfer completed
+bg->ba: transfer completed
+activate ba
+ba --> mb: bank transfer completed
+deactivate ba
+
+...
+
+mb --> tu: bank transfer completed
+activate tu
+tu -> w: add money
+tu --> mb: top-up completed
+deactivate tu
+
+...
+
+mb->n: top-up completed
+activate n
+n->u: send notification
+deactivate n
+@enduml

@@ -1,0 +1,63 @@
+@startuml
+
+actor User as u
+boundary "Customer Gateway" as cg
+participant Wallet as w
+participant "Top Up" as tu
+participant "Bank Account" as ba
+queue "Message Broker" as mb
+boundary "Merchant Gateway" as mg
+actor "Shop Owner" as so
+boundary "Bank Gateway" as bg
+actor Bank as b
+
+u->cg: pay to shop
+cg->w: create payment from user to shop
+activate w
+w->w: create payment pending
+deactivate w
+...
+
+so->mg: accept payment
+mg->w: accept payment
+activate w
+w->w: move money to shop wallet
+deactivate w
+
+...
+
+so->mg: Get money
+mg->tu: create top-up from wallet to bank
+activate tu
+tu->tu: create top-up
+tu-->mb: top-up created
+deactivate tu
+
+
+tu->w: create payment tu bank pending
+activate w
+w->w: create pending payment
+w->po: payment created
+deactivate w
+tu->ba: create bank transfer
+activate ba
+ba->b: create bank transfer
+ba->tu: bank transfer created
+deactivate ba
+deactivate tu
+
+...
+
+b->bg: bank transfer completed
+bg->ba: bank transfer completed
+activate ba
+ba-->mb: bank transfer completed
+deactivate ba
+mb-->po: bank transfer completed
+activate to
+po->w: finalize payment
+po->to: top-up completed
+deactivate to
+
+
+@enduml
