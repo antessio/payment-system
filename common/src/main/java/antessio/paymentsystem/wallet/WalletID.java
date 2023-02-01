@@ -3,7 +3,7 @@ package antessio.paymentsystem.wallet;
 public class WalletID {
     private String id;
 
-    WalletID(String id) {
+    public WalletID(String id) {
         this.id = id;
     }
 

@@ -2,6 +2,7 @@ package antessio.paymentsystem.wallet;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import antessio.paymentsystem.api.wallet.LockFundsCommand;
 import antessio.paymentsystem.api.wallet.MoveMoneyFromFundLockCommand;
@@ -96,8 +97,7 @@ public class WalletApplicationService implements WalletService {
 
     @Override
     public MovementId lockFunds(LockFundsCommand command) {
-        Wallet wallet = walletRepository.loadWalletById(command.getWalletID())
-                                        .orElseThrow(() -> new IllegalArgumentException("wallet id not found"));
+        Wallet wallet = loadWalletById(command.getWalletID());
         Wallet fundLockWallet = walletRepository.loadWalletByOwnerId(wallet.getOwnerId())
                                                 .stream()
                                                 .filter(w -> w.getType() == WalletType.FUND_LOCK)
@@ -111,6 +111,11 @@ public class WalletApplicationService implements WalletService {
                 .orElseThrow(()->new RuntimeException("unable to fund fund lock movement"));
     }
 
+    private Wallet loadWalletById(WalletID walletID) {
+        return walletRepository.loadWalletById(walletID)
+                               .orElseThrow(() -> new IllegalArgumentException("wallet id not found"));
+    }
+
     @Override
     public List<MovementDTO> moveMoneyFromFundLock(MoveMoneyFromFundLockCommand command) {
         Movement fundLock = walletRepository.loadMovementById(command.getFundLockId())
@@ -118,6 +123,13 @@ public class WalletApplicationService implements WalletService {
                                             .orElseThrow(() -> new IllegalArgumentException("invalid fund lock id " + command.getFundLockId()));
 
         return moveMoney(new MoveMoneyCommand(fundLock.getFromWallet(), command.getToWallet(), fundLock.getAmount()));
+    }
+
+    @Override
+    public Stream<MovementDTO> getMovements(WalletID walletID) {
+        Wallet wallet = loadWalletById(walletID);
+        return walletRepository.loadMovementsByWalletId(wallet.getId())
+                .map(MovementDTOAdapter::new);
     }
 
     private Wallet createFundLockWallet(WalletOwnerId ownerId, WalletOwner owner) {

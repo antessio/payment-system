@@ -2,6 +2,7 @@ package antessio.paymentsystem.wallet;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface WalletRepository {
 
@@ -16,6 +17,8 @@ public interface WalletRepository {
     List<Wallet> loadWalletByOwnerId(WalletOwnerId ownerId);
 
     Optional<Movement> loadMovementById(MovementId movementId);
+
+    Stream<Movement> loadMovementsByWalletId(WalletID walletID);
 
 
 }
