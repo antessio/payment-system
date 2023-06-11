@@ -1,29 +1,46 @@
-package antessio.paymentsystem.wallet;
+package antessio.paymentsystem.wallet.application;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import antessio.paymentsystem.api.wallet.LockFundsCommand;
-import antessio.paymentsystem.api.wallet.MoveMoneyFromFundLockCommand;
+import antessio.paymentsystem.api.wallet.CollectFundLockCommand;
 import antessio.paymentsystem.api.wallet.MovementDTO;
 import antessio.paymentsystem.api.wallet.WalletDTO;
 import antessio.paymentsystem.api.wallet.WalletService;
 import antessio.paymentsystem.common.Message;
 import antessio.paymentsystem.common.SerializationService;
 import antessio.paymentsystem.common.MessageBroker;
+import antessio.paymentsystem.wallet.Amount;
+import antessio.paymentsystem.wallet.MovementDirection;
+import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.WalletID;
+import antessio.paymentsystem.wallet.WalletOwner;
+import antessio.paymentsystem.wallet.WalletType;
+import antessio.paymentsystem.wallet.domain.Movement;
+import antessio.paymentsystem.wallet.domain.MovementBuilder;
+import antessio.paymentsystem.wallet.domain.MovementCreatedEventAdapter;
+import antessio.paymentsystem.wallet.domain.MovementDTOAdapter;
+import antessio.paymentsystem.wallet.domain.Wallet;
+import antessio.paymentsystem.wallet.domain.WalletBuilder;
+import antessio.paymentsystem.wallet.domain.WalletDTOAdapter;
+import antessio.paymentsystem.wallet.domain.WalletEventAdapter;
+import antessio.paymentsystem.wallet.WalletOwnerId;
+import antessio.paymentsystem.wallet.domain.WalletsUpdateBuilder;
 
 public class WalletApplicationService implements WalletService {
 
     private final WalletRepository walletRepository;
-
-
     private final MessageBroker messageBroker;
     private final SerializationService serializationService;
 
-    public WalletApplicationService(WalletRepository walletRepository,
-                                    MessageBroker messageBroker,
-                                    SerializationService serializationService) {
+    public WalletApplicationService(
+            WalletRepository walletRepository,
+            MessageBroker messageBroker,
+            SerializationService serializationService) {
         this.walletRepository = walletRepository;
         this.messageBroker = messageBroker;
         this.serializationService = serializationService;
@@ -32,8 +49,8 @@ public class WalletApplicationService implements WalletService {
     public WalletDTO getWallet(WalletID id) {
 
         return walletRepository.loadWalletById(id)
-                .map(WalletDTOAdapter::new)
-                .orElseThrow(()->new IllegalArgumentException("wallet with id "+id.getId()+" not found"));
+                               .map(WalletDTOAdapter::new)
+                               .orElseThrow(() -> new IllegalArgumentException("wallet with id " + id.getId() + " not found"));
     }
 
     private List<MovementDTO> moveMoney(final MoveMoneyCommand command) {
@@ -47,19 +64,15 @@ public class WalletApplicationService implements WalletService {
                                                  .withId(new MovementId(UUID.randomUUID().toString()))
                                                  .withAmount(command.getAmount())
                                                  .withDirection(MovementDirection.OUT)
-                                                 .withFromWallet(fromWallet.getId())
-                                                 .withFromWalletType(fromWallet.getType())
-                                                 .withToWallet(toWallet.getId())
-                                                 .withToWalletType(toWallet.getType())
+                                                 .withWalletId(fromWallet.getId())
+                                                 .withWalletType(fromWallet.getType())
                                                  .build();
         Movement destinationMovement = MovementBuilder.aMovement()
                                                       .withId(new MovementId(UUID.randomUUID().toString()))
                                                       .withAmount(command.getAmount())
                                                       .withDirection(MovementDirection.IN)
-                                                      .withFromWallet(toWallet.getId())
-                                                      .withFromWalletType(toWallet.getType())
-                                                      .withToWallet(fromWallet.getId())
-                                                      .withToWalletType(fromWallet.getType())
+                                                      .withWalletId(toWallet.getId())
+                                                      .withWalletType(toWallet.getType())
                                                       .build();
 
         Wallet fromWalletUpdated = WalletBuilder.aWallet()
@@ -76,23 +89,36 @@ public class WalletApplicationService implements WalletService {
                                               .withAmountUnit(toWallet.getAmountUnit() + getTargetAmount(destinationMovement))
                                               .build();
 
-        MovementId sourceMovementId = walletRepository.insertMovement(sourceMovement);
-        MovementId destinationMovementId = walletRepository.insertMovement(destinationMovement);
-        walletRepository.updateWallet(fromWalletUpdated);
-        walletRepository.updateWallet(toWalletUpdated);
+        List<MovementId> movementIds = walletRepository.updateWallet(WalletsUpdateBuilder.aWalletsUpdate()
+                                                                                         .withSourceWalletMovement(sourceMovement)
+                                                                                         .withDestinationWalletMovement(destinationMovement)
+                                                                                         .withSourceWallet(fromWallet)
+                                                                                         .withDestinationWallet(toWallet)
+                                                                                         .build());
+        Stream<Message> movementEvents = movementIds.stream()
+                                                    .map(walletRepository::loadMovementById)
+                                                    .filter(Optional::isPresent)
+                                                    .map(Optional::get)
+                                                    .map(MovementCreatedEventAdapter::new)
+                                                    .map(serializationService::serialize)
+                                                    .map(m -> Message.of("movement-created", m));
+
+        Stream<Message> walletEvents = Stream.of(fromWalletUpdated, toWalletUpdated)
+                                             .map(WalletEventAdapter::new)
+                                             .map(serializationService::serialize)
+                                             .map(m -> Message.of("wallet-updated", m));
 
         messageBroker.sendMessages(
-                List.of(
-                        Message.of("movement-created", serializationService.serialize(new MovementEventAdapter(sourceMovement))),
-                        Message.of("movement-created", serializationService.serialize(new MovementEventAdapter(destinationMovement))),
-                        Message.of("wallet-updated", serializationService.serialize(new WalletEventAdapter(fromWalletUpdated))),
-                        Message.of("wallet-updated", serializationService.serialize(new WalletEventAdapter(toWalletUpdated)))
-                )
+                Stream.concat(
+                              movementEvents,
+                              walletEvents)
+                      .toList()
         );
-        return List.of(
+/*        return List.of(
                 new MovementDTOAdapter(sourceMovement),
                 new MovementDTOAdapter(destinationMovement)
-        );
+        );*/
+        return Collections.emptyList();
     }
 
     @Override
@@ -102,13 +128,13 @@ public class WalletApplicationService implements WalletService {
                                                 .stream()
                                                 .filter(w -> w.getType() == WalletType.FUND_LOCK)
                                                 .findFirst()
-                                                .orElseGet(()-> createFundLockWallet(wallet.getOwnerId(), wallet.getOwner()));
+                                                .orElseGet(() -> createFundLockWallet(wallet.getOwnerId(), wallet.getOwner()));
         List<MovementDTO> movements = moveMoney(new MoveMoneyCommand(wallet.getId(), fundLockWallet.getId(), command.getAmount()));
         return movements.stream()
-                .filter(m->m.getToWallet().equals(fundLockWallet.getId()))
-                .findFirst()
-                .map(MovementDTO::getId)
-                .orElseThrow(()->new RuntimeException("unable to fund fund lock movement"));
+                        .filter(m -> m.getToWallet().equals(fundLockWallet.getId()))
+                        .findFirst()
+                        .map(MovementDTO::getId)
+                        .orElseThrow(() -> new RuntimeException("unable to fund fund lock movement"));
     }
 
     private Wallet loadWalletById(WalletID walletID) {
@@ -117,19 +143,21 @@ public class WalletApplicationService implements WalletService {
     }
 
     @Override
-    public List<MovementDTO> moveMoneyFromFundLock(MoveMoneyFromFundLockCommand command) {
+    public MovementId collectFundLock(CollectFundLockCommand command) {
         Movement fundLock = walletRepository.loadMovementById(command.getFundLockId())
-                                            .filter(m -> m.getToWalletType() == WalletType.FUND_LOCK)
+                                            .filter(m -> m.getWalletType() == WalletType.FUND_LOCK)
                                             .orElseThrow(() -> new IllegalArgumentException("invalid fund lock id " + command.getFundLockId()));
 
-        return moveMoney(new MoveMoneyCommand(fundLock.getFromWallet(), command.getToWallet(), fundLock.getAmount()));
+        List<MovementDTO> movements = moveMoney(new MoveMoneyCommand(fundLock.getWalletId(), command.getToWallet(), fundLock.getAmount()));
+        return movements.get(0).getId();
     }
 
     @Override
     public Stream<MovementDTO> getMovements(WalletID walletID) {
         Wallet wallet = loadWalletById(walletID);
-        return walletRepository.loadMovementsByWalletId(wallet.getId())
-                .map(MovementDTOAdapter::new);
+        return Stream.empty();
+//        return walletRepository.loadMovementsByWalletId(wallet.getId())
+//                               .map(MovementDTOAdapter::new);
     }
 
     private Wallet createFundLockWallet(WalletOwnerId ownerId, WalletOwner owner) {
@@ -142,7 +170,7 @@ public class WalletApplicationService implements WalletService {
                                                                   .withType(WalletType.FUND_LOCK)
                                                                   .build());
         return walletRepository.loadWalletById(walletID)
-                .orElseThrow(()->new IllegalStateException("wallet not created"));
+                               .orElseThrow(() -> new IllegalStateException("wallet not created"));
     }
 
     private Long getTargetAmount(Movement sourceMovement) {
@@ -150,6 +178,32 @@ public class WalletApplicationService implements WalletService {
             return sourceMovement.getAmount().getAmountUnit() * -1;
         }
         return sourceMovement.getAmount().getAmountUnit();
+    }
+
+    static class MoveMoneyCommand {
+
+        private WalletID fromWallet;
+        private WalletID toWallet;
+        private Amount amount;
+
+        public MoveMoneyCommand(WalletID fromWallet, WalletID toWallet, Amount amount) {
+            this.fromWallet = fromWallet;
+            this.toWallet = toWallet;
+            this.amount = amount;
+        }
+
+        public WalletID getFromWallet() {
+            return fromWallet;
+        }
+
+        public WalletID getToWallet() {
+            return toWallet;
+        }
+
+        public Amount getAmount() {
+            return amount;
+        }
+
     }
 
 }

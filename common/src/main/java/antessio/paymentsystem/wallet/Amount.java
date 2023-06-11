@@ -4,7 +4,7 @@ public class Amount {
     private Long amountUnit;
     private String currency;
 
-    Amount(Long amountUnit, String currency) {
+    public Amount(Long amountUnit, String currency) {
         this.amountUnit = amountUnit;
         this.currency = currency;
     }

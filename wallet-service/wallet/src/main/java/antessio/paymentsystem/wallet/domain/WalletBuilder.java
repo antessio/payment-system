@@ -1,18 +1,33 @@
-package antessio.paymentsystem.wallet;
+package antessio.paymentsystem.wallet.domain;
+
+import java.time.Instant;
+
+import antessio.paymentsystem.wallet.WalletID;
+import antessio.paymentsystem.wallet.WalletOwner;
+import antessio.paymentsystem.wallet.WalletOwnerId;
+import antessio.paymentsystem.wallet.WalletType;
 
 public final class WalletBuilder {
 
+    private Integer version;
     private WalletID id;
     private WalletOwner owner;
     private WalletOwnerId ownerId;
     private WalletType type;
     private Long amountUnit;
+    private Instant insertOn;
+    private Instant updatedOn;
 
     private WalletBuilder() {
     }
 
     public static WalletBuilder aWallet() {
         return new WalletBuilder();
+    }
+
+    public WalletBuilder withVersion(Integer version) {
+        this.version = version;
+        return this;
     }
 
     public WalletBuilder withId(WalletID id) {
@@ -40,8 +55,18 @@ public final class WalletBuilder {
         return this;
     }
 
+    public WalletBuilder withInsertOn(Instant insertOn) {
+        this.insertOn = insertOn;
+        return this;
+    }
+
+    public WalletBuilder withUpdatedOn(Instant updatedOn) {
+        this.updatedOn = updatedOn;
+        return this;
+    }
+
     public Wallet build() {
-        return new Wallet(id, owner, ownerId, type, amountUnit);
+        return new Wallet(id, owner, ownerId, type, amountUnit, insertOn, updatedOn,version);
     }
 
 }

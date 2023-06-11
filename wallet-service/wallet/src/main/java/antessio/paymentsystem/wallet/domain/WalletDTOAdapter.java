@@ -1,4 +1,4 @@
-package antessio.paymentsystem.wallet;
+package antessio.paymentsystem.wallet.domain;
 
 import antessio.paymentsystem.api.wallet.WalletDTO;
 

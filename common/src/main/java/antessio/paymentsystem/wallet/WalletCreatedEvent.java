@@ -1,15 +1,13 @@
 package antessio.paymentsystem.wallet;
 
-import java.util.List;
 
-
-public class WalletEvent {
+public class WalletCreatedEvent {
     private WalletID id;
     private WalletOwner owner;
     private WalletType type;
     private Long amountUnit;
 
-    public WalletEvent(WalletID id, WalletOwner owner, WalletType type, Long amountUnit) {
+    public WalletCreatedEvent(WalletID id, WalletOwner owner, WalletType type, Long amountUnit) {
         this.id = id;
         this.owner = owner;
         this.type = type;

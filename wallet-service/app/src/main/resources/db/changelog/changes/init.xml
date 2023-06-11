@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+<changeSet author="antessio" id="202302011119">
+    <createTable tableName="wallet">
+        <column name="id" type="UUID">
+            <constraints nullable="false" primaryKey="true"/>
+        </column>
+        <column name="owner" type="VARCHAR(255)"/>
+        <column name="ownerId" type="VARCHAR(255)"/>
+        <column name="type" type="VARCHAR(255)"/>
+        <column name="amountUnit" type="bigint"/>
+        <column name="insertDate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValue="now()"/>
+        <column name="updateDate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        <column name="version" type="bigint" defaultValue="0"/>
+    </createTable>
+
+
+    <createTable tableName="movement">
+        <column name="id" type="VARCHAR(26)">
+            <constraints nullable="false" primaryKey="true"/>
+        </column>
+        <column name="direction" type="VARCHAR(255)"/>
+        <column name="amountUnit" type="bigint"/>
+        <column name="amountCurrency" type="VARCHAR(255)"/>
+        <column name="walletId" type="UUID"/>
+        <column name="groupId" type="UUID" />
+        <column name="insertDate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValue="now()"/>
+        <column name="updateDate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        <column name="version" type="bigint" defaultValue="0"/>
+        <column name="sortingKey" type="bigint" />
+    </createTable>
+
+    <addForeignKeyConstraint
+            constraintName="FK_movement_walletId"
+            baseTableName="movement"
+            baseColumnNames="walletId"
+            referencedTableName="wallet"
+            referencedColumnNames="id" />
+</changeSet>
+</databaseChangeLog>

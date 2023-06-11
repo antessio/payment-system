@@ -1,6 +1,5 @@
 package antessio.paymentsystem.api.wallet;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import antessio.paymentsystem.wallet.MovementId;
@@ -13,7 +12,7 @@ public interface WalletService {
 
     MovementId lockFunds(LockFundsCommand command);
 
-    List<MovementDTO> moveMoneyFromFundLock(MoveMoneyFromFundLockCommand command);
+    MovementId collectFundLock(CollectFundLockCommand command);
 
     Stream<MovementDTO> getMovements(WalletID walletID);
 
