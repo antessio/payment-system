@@ -45,7 +45,7 @@ public class WalletEntity implements Serializable {
 
     @Version
     @Column(name = "version")
-    private Integer version;
+    private Long version;
 
     protected WalletEntity() {
     }
@@ -54,7 +54,7 @@ public class WalletEntity implements Serializable {
         this.id = id;
     }
 
-    public WalletEntity(String id, String owner, String ownerId, String type, Long amountUnit, Date insertDate, Date updateDate, Integer version) {
+    public WalletEntity(String id, String owner, String ownerId, String type, Long amountUnit, Date insertDate, Date updateDate, Long version) {
         this.id = id;
         this.owner = owner;
         this.ownerId = ownerId;
@@ -100,7 +100,7 @@ public class WalletEntity implements Serializable {
         return updateDate;
     }
 
-    public Integer getVersion() {
+    public Long getVersion() {
         return version;
     }
 

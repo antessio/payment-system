@@ -114,11 +114,10 @@ public class WalletApplicationService implements WalletService {
                               walletEvents)
                       .toList()
         );
-/*        return List.of(
+        return List.of(
                 new MovementDTOAdapter(sourceMovement),
                 new MovementDTOAdapter(destinationMovement)
-        );*/
-        return Collections.emptyList();
+        );
     }
 
     @Override
@@ -131,7 +130,7 @@ public class WalletApplicationService implements WalletService {
                                                 .orElseGet(() -> createFundLockWallet(wallet.getOwnerId(), wallet.getOwner()));
         List<MovementDTO> movements = moveMoney(new MoveMoneyCommand(wallet.getId(), fundLockWallet.getId(), command.getAmount()));
         return movements.stream()
-                        .filter(m -> m.getToWallet().equals(fundLockWallet.getId()))
+                        .filter(m -> m.getWalletID().equals(fundLockWallet.getId()))
                         .findFirst()
                         .map(MovementDTO::getId)
                         .orElseThrow(() -> new RuntimeException("unable to fund fund lock movement"));

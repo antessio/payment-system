@@ -15,6 +15,7 @@ import com.github.f4b6a3.ulid.Ulid;
 import antessio.paymentsystem.wallet.MovementDirection;
 import antessio.paymentsystem.wallet.domain.Movement;
 import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.domain.MovementAdapter;
 import antessio.paymentsystem.wallet.domain.Wallet;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwnerId;
@@ -61,15 +62,12 @@ public class WalletRepositoryAdapter implements WalletRepository {
 
     private MovementEntity newMovementEntity(Movement movement) {
 
-        WalletID walletId = movement.getDirection() == MovementDirection.IN ?
-                            movement.getToWallet() :
-                            movement.getFromWallet();
         return new MovementEntity(
                 Ulid.from(UUID.randomUUID()).toString(),
                 movement.getDirection().name(),
                 movement.getAmount().getAmountUnit(),
                 movement.getAmount().getCurrency(),
-                new WalletEntity(walletId.getId()),
+                new WalletEntity(movement.getWalletId().getId()),
                 new java.util.Date(),
                 null,
                 0L);
@@ -103,7 +101,7 @@ public class WalletRepositoryAdapter implements WalletRepository {
                                 .map(Date::from)
                                 .orElseGet(Date::new),
                         null,
-                        0));
+                        0L));
         return new WalletID(walletEntity.getId());
     }
 
@@ -117,20 +115,19 @@ public class WalletRepositoryAdapter implements WalletRepository {
 
     @Override
     public Optional<Movement> loadMovementById(MovementId movementId) {
-        return Optional.empty();
+        return movementRepository.findById(movementId.getId())
+                                 .map(MovementAdapter::new);
     }
 
     @Override
     public Stream<Movement> loadMovementsByWalletId(WalletID walletID) {
 
         return Stream.iterate(
-                                                      fetchMovement(walletID, null, BATCH_SIZE),
-                                                      List::isEmpty,
-                                                      l -> fetchMovement(walletID, l.get(l.size() - 1).getId(), BATCH_SIZE))
-                                              .flatMap(List::stream)
-                .map(MovementAdapter::new);
-
-        //return Stream.empty();
+                             fetchMovement(walletID, null, BATCH_SIZE),
+                             List::isEmpty,
+                             l -> fetchMovement(walletID, l.get(l.size() - 1).getId(), BATCH_SIZE))
+                     .flatMap(List::stream)
+                     .map(MovementAdapter::new);
     }
 
     private List<MovementEntity> fetchMovement(WalletID walletID, String cursor, int size) {

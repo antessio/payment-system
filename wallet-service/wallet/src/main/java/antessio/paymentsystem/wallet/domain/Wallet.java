@@ -27,7 +27,7 @@ public class Wallet extends OptimisticLock {
             Long amountUnit,
             Instant insertOn,
             Instant updatedOn,
-            Integer version) {
+            Long version) {
         super(version);
         this.id = id;
         this.owner = owner;

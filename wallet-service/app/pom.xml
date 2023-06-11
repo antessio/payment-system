@@ -34,7 +34,7 @@
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>antessio.payment-system</groupId>
+			<groupId>antessio.payment-system.wallet-service</groupId>
 			<artifactId>wallet</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>

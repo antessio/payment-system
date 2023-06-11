@@ -8,30 +8,20 @@ import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletType;
 
 public class MovementDTO {
+
     private MovementId id;
     private MovementDirection direction;
     private Amount amount;
-    private WalletID fromWallet;
-    private WalletType fromWalletType;
+    private WalletID walletID;
+    private WalletType walletType;
 
-    private WalletID toWallet;
-    private WalletType toWalletType;
 
-    public MovementDTO(
-            MovementId id,
-            MovementDirection direction,
-            Amount amount,
-            WalletID fromWallet,
-            WalletType fromWalletType,
-            WalletID toWallet,
-            WalletType toWalletType) {
+    public MovementDTO(MovementId id, MovementDirection direction, Amount amount, WalletID walletID, WalletType walletType) {
         this.id = id;
         this.direction = direction;
         this.amount = amount;
-        this.fromWallet = fromWallet;
-        this.fromWalletType = fromWalletType;
-        this.toWallet = toWallet;
-        this.toWalletType = toWalletType;
+        this.walletID = walletID;
+        this.walletType = walletType;
     }
 
     public MovementId getId() {
@@ -46,20 +36,12 @@ public class MovementDTO {
         return amount;
     }
 
-    public WalletID getFromWallet() {
-        return fromWallet;
+    public WalletID getWalletID() {
+        return walletID;
     }
 
-    public WalletType getFromWalletType() {
-        return fromWalletType;
-    }
-
-    public WalletID getToWallet() {
-        return toWallet;
-    }
-
-    public WalletType getToWalletType() {
-        return toWalletType;
+    public WalletType getWalletType() {
+        return walletType;
     }
 
 }

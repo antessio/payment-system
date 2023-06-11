@@ -9,7 +9,7 @@ import antessio.paymentsystem.wallet.WalletType;
 
 public final class WalletBuilder {
 
-    private Integer version;
+    private Long version;
     private WalletID id;
     private WalletOwner owner;
     private WalletOwnerId ownerId;
@@ -25,7 +25,7 @@ public final class WalletBuilder {
         return new WalletBuilder();
     }
 
-    public WalletBuilder withVersion(Integer version) {
+    public WalletBuilder withVersion(Long version) {
         this.version = version;
         return this;
     }

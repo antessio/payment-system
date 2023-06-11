@@ -1,13 +1,13 @@
 package antessio.paymentsystem.common;
 
 public class OptimisticLock {
-    protected Integer version;
+    protected Long version;
 
-    public OptimisticLock(Integer version) {
+    public OptimisticLock(Long version) {
         this.version = version;
     }
 
-    public Integer getVersion() {
+    public Long getVersion() {
         return version;
     }
 

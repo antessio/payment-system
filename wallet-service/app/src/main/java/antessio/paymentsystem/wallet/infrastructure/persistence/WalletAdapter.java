@@ -22,9 +22,7 @@ public class WalletAdapter extends Wallet {
                 Optional.ofNullable(entity.getUpdateDate())
                         .map(Date::toInstant)
                         .orElse(null),
-                Optional.ofNullable(entity.getVersion())
-                        .map(Long::intValue)
-                        .orElse(0));
+                entity.getVersion());
     }
 
 }
