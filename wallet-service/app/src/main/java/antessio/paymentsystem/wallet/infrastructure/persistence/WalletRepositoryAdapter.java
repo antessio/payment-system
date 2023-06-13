@@ -12,14 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.github.f4b6a3.ulid.Ulid;
 
-import antessio.paymentsystem.wallet.MovementDirection;
-import antessio.paymentsystem.wallet.domain.Movement;
 import antessio.paymentsystem.wallet.MovementId;
-import antessio.paymentsystem.wallet.domain.MovementAdapter;
-import antessio.paymentsystem.wallet.domain.Wallet;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwnerId;
 import antessio.paymentsystem.wallet.application.WalletRepository;
+import antessio.paymentsystem.wallet.domain.Movement;
+import antessio.paymentsystem.wallet.domain.MovementAdapter;
+import antessio.paymentsystem.wallet.domain.Wallet;
 import antessio.paymentsystem.wallet.domain.WalletsUpdate;
 
 @Component

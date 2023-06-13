@@ -3,11 +3,11 @@ package antessio.paymentsystem.api.wallet;
 import antessio.paymentsystem.wallet.Amount;
 import antessio.paymentsystem.wallet.WalletID;
 
-public class LockFundsCommand {
+public class WalletFundsLockCommand {
     private Amount amount;
     private WalletID walletID;
 
-    public LockFundsCommand(Amount amount, WalletID walletID) {
+    public WalletFundsLockCommand(Amount amount, WalletID walletID) {
         this.amount = amount;
         this.walletID = walletID;
     }

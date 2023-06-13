@@ -54,4 +54,8 @@ public class SimpleMessageBroker implements MessageBroker {
     }
 
 
+    public List<Message> getMessageList() {
+        return messageList;
+    }
+
 }

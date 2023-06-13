@@ -10,9 +10,12 @@ public interface WalletService {
 
     WalletDTO getWallet(WalletID id);
 
-    MovementId lockFunds(LockFundsCommand command);
+    MovementId lockFunds(WalletFundsLockCommand command);
+    MovementId lockFunds(WalletOwnerFundsLockCommand command);
 
-    MovementId collectFundLock(CollectFundLockCommand command);
+    MovementId collectFundLock(WalletFundsLockCollectCommand command);
+
+    MovementId collectFundLock(WalletOwnerFundsLockCollectCommand command);
 
     Stream<MovementDTO> getMovements(WalletID walletID);
 
