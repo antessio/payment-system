@@ -1,6 +1,7 @@
 package antessio.paymentsystem.wallet.application;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,8 +86,12 @@ public class InMemoryWalletRepository implements WalletRepository {
         wallets.put(newWallet.getId(), newWalletUpdated);
     }
 
-    private MovementId insertMovement(Movement movement) {
+    MovementId insertMovement(Movement movement) {
         movements.put(movement.getId(), movement);
+        if (!movementsByWalletId.containsKey(movement.getWalletId())) {
+            movementsByWalletId.put(movement.getWalletId(), new ArrayList<>());
+        }
+        movementsByWalletId.get(movement.getWalletId()).add(movement);
         return movement.getId();
     }
 
@@ -94,7 +99,7 @@ public class InMemoryWalletRepository implements WalletRepository {
     public void deleteWallet(WalletID walletID) {
         Optional.ofNullable(movementsByWalletId.get(walletID))
                 .ifPresent(m -> m.stream().map(Movement::getId)
-                                                 .forEach(movements::remove));
+                                 .forEach(movements::remove));
         movementsByWalletId.remove(walletID);
         wallets.remove(walletID);
     }
