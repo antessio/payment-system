@@ -2,21 +2,21 @@ package antessio.paymentsystem.api.wallet;
 
 
 import antessio.paymentsystem.wallet.Amount;
-import antessio.paymentsystem.wallet.MovementDirection;
-import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.TransferDirection;
+import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletType;
 
-public class MovementDTO {
+public class TransferDTO {
 
-    private MovementId id;
-    private MovementDirection direction;
+    private TransferId id;
+    private TransferDirection direction;
     private Amount amount;
     private WalletID walletID;
     private WalletType walletType;
 
 
-    public MovementDTO(MovementId id, MovementDirection direction, Amount amount, WalletID walletID, WalletType walletType) {
+    public TransferDTO(TransferId id, TransferDirection direction, Amount amount, WalletID walletID, WalletType walletType) {
         this.id = id;
         this.direction = direction;
         this.amount = amount;
@@ -24,11 +24,11 @@ public class MovementDTO {
         this.walletType = walletType;
     }
 
-    public MovementId getId() {
+    public TransferId getId() {
         return id;
     }
 
-    public MovementDirection getDirection() {
+    public TransferDirection getDirection() {
         return direction;
     }
 

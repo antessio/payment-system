@@ -21,7 +21,7 @@
     </createTable>
 
 
-    <createTable tableName="movement">
+    <createTable tableName="transfer">
         <column name="id" type="VARCHAR(26)">
             <constraints nullable="false" primaryKey="true"/>
         </column>
@@ -29,7 +29,7 @@
         <column name="amountUnit" type="bigint"/>
         <column name="amountCurrency" type="VARCHAR(255)"/>
         <column name="walletId" type="UUID"/>
-        <column name="groupId" type="UUID" />
+        <column name="operationId" type="VARCHAR(26)" />
         <column name="insertDate" type="TIMESTAMP WITHOUT TIME ZONE" defaultValue="now()"/>
         <column name="updateDate" type="TIMESTAMP WITHOUT TIME ZONE"/>
         <column name="version" type="bigint" defaultValue="0"/>
@@ -42,5 +42,15 @@
             baseColumnNames="walletId"
             referencedTableName="wallet"
             referencedColumnNames="id" />
+    <createIndex indexName="transfer__operationId"
+                 tableName="transfer"
+                 unique="false">
+        <column name="operationId"/>
+    </createIndex>
+    <createIndex indexName="transfer__walletId"
+                 tableName="transfer"
+                 unique="false">
+        <column name="walletId"/>
+    </createIndex>
 </changeSet>
 </databaseChangeLog>

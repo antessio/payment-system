@@ -14,7 +14,7 @@ import jakarta.persistence.Version;
 
 
 @Entity
-@Table(name = "wallet")
+@Table(name = "wallet", schema = "wallet")
 public class WalletEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

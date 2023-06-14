@@ -1,6 +1,6 @@
 package antessio.paymentsystem.wallet;
 
-public enum MovementDirection {
+public enum TransferDirection {
     IN,
     OUT
 }

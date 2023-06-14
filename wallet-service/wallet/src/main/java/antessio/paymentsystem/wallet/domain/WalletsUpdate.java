@@ -2,36 +2,36 @@ package antessio.paymentsystem.wallet.domain;
 
 public class WalletsUpdate {
     private Wallet sourceWallet;
-    private Movement sourceWalletMovement;
+    private Transfer sourceWalletTransfer;
 
 
     private Wallet destinationWallet;
-    private Movement destinationWalletMovement;
+    private Transfer destinationWalletTransfer;
 
     WalletsUpdate(Wallet sourceWallet,
-                  Movement sourceWalletMovement,
+                  Transfer sourceWalletTransfer,
                   Wallet destinationWallet,
-                  Movement destinationWalletMovement) {
+                  Transfer destinationWalletTransfer) {
         this.sourceWallet = sourceWallet;
-        this.sourceWalletMovement = sourceWalletMovement;
+        this.sourceWalletTransfer = sourceWalletTransfer;
         this.destinationWallet = destinationWallet;
-        this.destinationWalletMovement = destinationWalletMovement;
+        this.destinationWalletTransfer = destinationWalletTransfer;
     }
 
     public Wallet getSourceWallet() {
         return sourceWallet;
     }
 
-    public Movement getSourceWalletMovement() {
-        return sourceWalletMovement;
+    public Transfer getSourceWalletMovement() {
+        return sourceWalletTransfer;
     }
 
     public Wallet getDestinationWallet() {
         return destinationWallet;
     }
 
-    public Movement getDestinationWalletMovement() {
-        return destinationWalletMovement;
+    public Transfer getDestinationWalletMovement() {
+        return destinationWalletTransfer;
     }
 
 }

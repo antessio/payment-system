@@ -1,22 +1,22 @@
 package antessio.paymentsystem.api.wallet;
 
-import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;
 
 public final class WalletFundsLockCollectCommand {
-    private final MovementId fundLockId;
+    private final TransferId fundLockId;
     private final WalletID toWallet;
 
-    private WalletFundsLockCollectCommand(MovementId fundLockId, WalletID toWallet) {
+    private WalletFundsLockCollectCommand(TransferId fundLockId, WalletID toWallet) {
         this.fundLockId = fundLockId;
         this.toWallet = toWallet;
     }
 
-    public static WalletFundsLockCollectCommand of(MovementId fundLockId, WalletID toWallet) {
+    public static WalletFundsLockCollectCommand of(TransferId fundLockId, WalletID toWallet) {
         return new WalletFundsLockCollectCommand(fundLockId, toWallet);
     }
 
-    public MovementId getFundLockId() {
+    public TransferId getFundLockId() {
         return this.fundLockId;
     }
 
@@ -24,7 +24,7 @@ public final class WalletFundsLockCollectCommand {
         return this.toWallet;
     }
 
-    public WalletFundsLockCollectCommand withFundLockId(MovementId fundLockId) {
+    public WalletFundsLockCollectCommand withFundLockId(TransferId fundLockId) {
         return of(fundLockId, getToWallet());
     }
 

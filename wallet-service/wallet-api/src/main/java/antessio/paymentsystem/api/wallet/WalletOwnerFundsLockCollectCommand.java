@@ -1,23 +1,22 @@
 package antessio.paymentsystem.api.wallet;
 
-import antessio.paymentsystem.wallet.MovementId;
-import antessio.paymentsystem.wallet.WalletID;
+import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletOwnerId;
 
 public final class WalletOwnerFundsLockCollectCommand {
-    private final MovementId fundLockId;
+    private final TransferId fundLockId;
     private final WalletOwnerId toWalletOwnerId;
 
-    private WalletOwnerFundsLockCollectCommand(MovementId fundLockId, WalletOwnerId toWalletOwnerId) {
+    private WalletOwnerFundsLockCollectCommand(TransferId fundLockId, WalletOwnerId toWalletOwnerId) {
         this.fundLockId = fundLockId;
         this.toWalletOwnerId = toWalletOwnerId;
     }
 
-    public static WalletOwnerFundsLockCollectCommand of(MovementId fundLockId, WalletOwnerId toWallet) {
+    public static WalletOwnerFundsLockCollectCommand of(TransferId fundLockId, WalletOwnerId toWallet) {
         return new WalletOwnerFundsLockCollectCommand(fundLockId, toWallet);
     }
 
-    public MovementId getFundLockId() {
+    public TransferId getFundLockId() {
         return this.fundLockId;
     }
 
@@ -25,7 +24,7 @@ public final class WalletOwnerFundsLockCollectCommand {
         return this.toWalletOwnerId;
     }
 
-    public WalletOwnerFundsLockCollectCommand withFundLockId(MovementId fundLockId) {
+    public WalletOwnerFundsLockCollectCommand withFundLockId(TransferId fundLockId) {
         return of(fundLockId, getToWalletOwnerId());
     }
 

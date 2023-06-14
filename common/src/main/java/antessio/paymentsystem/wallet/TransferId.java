@@ -1,9 +1,9 @@
 package antessio.paymentsystem.wallet;
 
-public class MovementId {
+public class TransferId {
     private String id;
 
-    public MovementId(String id) {
+    public TransferId(String id) {
         this.id = id;
     }
 

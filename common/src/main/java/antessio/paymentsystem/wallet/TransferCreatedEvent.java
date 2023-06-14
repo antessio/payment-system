@@ -1,15 +1,15 @@
 package antessio.paymentsystem.wallet;
 
-public class MovementCreatedEvent {
-    private MovementId id;
-    private MovementDirection direction;
+public class TransferCreatedEvent {
+    private TransferId id;
+    private TransferDirection direction;
     private Amount amount;
     private WalletID fromWallet;
     private WalletType fromWalletType;
 
-    public MovementCreatedEvent(
-            MovementId id,
-            MovementDirection direction,
+    public TransferCreatedEvent(
+            TransferId id,
+            TransferDirection direction,
             Amount amount,
             WalletID fromWallet,
             WalletType fromWalletType) {
@@ -20,11 +20,11 @@ public class MovementCreatedEvent {
         this.fromWalletType = fromWalletType;
     }
 
-    public MovementId getId() {
+    public TransferId getId() {
         return id;
     }
 
-    public MovementDirection getDirection() {
+    public TransferDirection getDirection() {
         return direction;
     }
 

@@ -12,12 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.github.f4b6a3.ulid.Ulid;
 
-import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwnerId;
 import antessio.paymentsystem.wallet.application.WalletRepository;
-import antessio.paymentsystem.wallet.domain.Movement;
-import antessio.paymentsystem.wallet.domain.MovementAdapter;
+import antessio.paymentsystem.wallet.domain.Transfer;
+import antessio.paymentsystem.wallet.domain.TransferAdapter;
 import antessio.paymentsystem.wallet.domain.Wallet;
 import antessio.paymentsystem.wallet.domain.WalletsUpdate;
 
@@ -25,13 +25,13 @@ import antessio.paymentsystem.wallet.domain.WalletsUpdate;
 public class WalletRepositoryAdapter implements WalletRepository {
 
     public static final int BATCH_SIZE = 20;
-    private final MovementRepository movementRepository;
+    private final TransferRepository transferRepository;
     private final antessio.paymentsystem.wallet.infrastructure.persistence.WalletRepository walletRepository;
 
     public WalletRepositoryAdapter(
-            MovementRepository movementRepository,
+            TransferRepository transferRepository,
             antessio.paymentsystem.wallet.infrastructure.persistence.WalletRepository walletRepository) {
-        this.movementRepository = movementRepository;
+        this.transferRepository = transferRepository;
         this.walletRepository = walletRepository;
     }
 
@@ -43,30 +43,31 @@ public class WalletRepositoryAdapter implements WalletRepository {
 
     @Override
     @Transactional
-    public List<MovementId> updateWallet(WalletsUpdate walletsUpdate) {
-        MovementId sourceMovementId = insertMovement(walletsUpdate.getSourceWalletMovement());
-        MovementId destinationMovementId = insertMovement(walletsUpdate.getDestinationWalletMovement());
+    public List<TransferId> updateWallet(WalletsUpdate walletsUpdate) {
+        TransferId sourceTransferId = insertMovement(walletsUpdate.getSourceWalletMovement());
+        TransferId destinationTransferId = insertMovement(walletsUpdate.getDestinationWalletMovement());
         updateWallet(walletsUpdate.getSourceWallet());
         updateWallet(walletsUpdate.getDestinationWallet());
-        return List.of(sourceMovementId, destinationMovementId);
+        return List.of(sourceTransferId, destinationTransferId);
     }
 
 
-    private MovementId insertMovement(Movement movement) {
+    private TransferId insertMovement(Transfer transfer) {
 
-        antessio.paymentsystem.wallet.infrastructure.persistence.MovementEntity movementInserted
-                = movementRepository.save(newMovementEntity(movement));
-        return new MovementId(movementInserted.getId());
+        TransferEntity movementInserted
+                = transferRepository.save(newMovementEntity(transfer));
+        return new TransferId(movementInserted.getId());
     }
 
-    private MovementEntity newMovementEntity(Movement movement) {
+    private TransferEntity newMovementEntity(Transfer transfer) {
 
-        return new MovementEntity(
+        return new TransferEntity(
                 Ulid.from(UUID.randomUUID()).toString(),
-                movement.getDirection().name(),
-                movement.getAmount().getAmountUnit(),
-                movement.getAmount().getCurrency(),
-                new WalletEntity(movement.getWalletId().getId()),
+                transfer.getDirection().name(),
+                transfer.getAmount().getAmountUnit(),
+                transfer.getAmount().getCurrency(),
+                new WalletEntity(transfer.getWalletId().getId()),
+                transfer.getOperationId(),
                 new java.util.Date(),
                 null,
                 0L);
@@ -113,24 +114,32 @@ public class WalletRepositoryAdapter implements WalletRepository {
     }
 
     @Override
-    public Optional<Movement> loadMovementById(MovementId movementId) {
-        return movementRepository.findById(movementId.getId())
-                                 .map(MovementAdapter::new);
+    public Optional<Transfer> loadTransferById(TransferId transferId) {
+        return transferRepository.findById(transferId.getId())
+                                 .map(TransferAdapter::new);
     }
 
     @Override
-    public Stream<Movement> loadMovementsByWalletId(WalletID walletID) {
+    public Stream<Transfer> loadTransfersByWalletId(WalletID walletID) {
 
         return Stream.iterate(
                              fetchMovement(walletID, null, BATCH_SIZE),
                              List::isEmpty,
                              l -> fetchMovement(walletID, l.get(l.size() - 1).getId(), BATCH_SIZE))
                      .flatMap(List::stream)
-                     .map(MovementAdapter::new);
+                     .map(TransferAdapter::new);
     }
 
-    private List<MovementEntity> fetchMovement(WalletID walletID, String cursor, int size) {
-        return movementRepository.findByWalletIdStartingFrom(walletID.getId(), cursor, size);
+    @Override
+    public List<Transfer> loadTransfersByOperationId(String operationId) {
+        return transferRepository.findByOperationId(operationId)
+                                 .stream()
+                                 .map(TransferAdapter::new)
+                                 .collect(Collectors.toList());
+    }
+
+    private List<TransferEntity> fetchMovement(WalletID walletID, String cursor, int size) {
+        return transferRepository.findByWalletIdStartingFrom(walletID.getId(), cursor, size);
     }
 
 }

@@ -11,8 +11,8 @@ import jakarta.persistence.Table;
 
 
 @Entity
-@Table(name = "movement")
-public class MovementEntity implements Serializable {
+@Table(name = "transfer", schema = "wallet")
+public class TransferEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -33,6 +33,9 @@ public class MovementEntity implements Serializable {
     @OneToOne
     private WalletEntity wallet;
 
+    @Column(name = "operationId")
+    private String operationId;
+
     @Column(name = "insertDate")
     private Date insertDate;
 
@@ -43,15 +46,16 @@ public class MovementEntity implements Serializable {
     private Long version;
 
 
-    protected MovementEntity() {
+    protected TransferEntity() {
     }
 
-    public MovementEntity(
+    public TransferEntity(
             String id,
             String direction,
             Long amountUnit,
             String amountCurrency,
             WalletEntity wallet,
+            String operationId,
             Date insertDate,
             Date updateDate,
             Long version) {
@@ -60,6 +64,7 @@ public class MovementEntity implements Serializable {
         this.amountUnit = amountUnit;
         this.amountCurrency = amountCurrency;
         this.wallet = wallet;
+        this.operationId = operationId;
         this.insertDate = insertDate;
         this.updateDate = updateDate;
         this.version = version;
@@ -83,6 +88,9 @@ public class MovementEntity implements Serializable {
 
     public WalletEntity getWallet() {
         return wallet;
+    }
+    public String getOperationId() {
+        return operationId;
     }
 
     public Date getInsertDate() {

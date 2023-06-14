@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 import java.util.UUID;
 
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,13 +17,13 @@ import antessio.paymentsystem.common.ObjectMapperSerializationService;
 import antessio.paymentsystem.common.SerializationService;
 import antessio.paymentsystem.common.SimpleMessageBroker;
 import antessio.paymentsystem.wallet.Amount;
-import antessio.paymentsystem.wallet.MovementDirection;
-import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.TransferDirection;
+import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwner;
 import antessio.paymentsystem.wallet.WalletOwnerId;
 import antessio.paymentsystem.wallet.WalletType;
-import antessio.paymentsystem.wallet.domain.MovementBuilder;
+import antessio.paymentsystem.wallet.domain.TransferBuilder;
 import antessio.paymentsystem.wallet.domain.WalletBuilder;
 
 class WalletApplicationServiceTest {
@@ -58,8 +59,8 @@ class WalletApplicationServiceTest {
 
         //then
         assertWallets(walletOwnerId, new Tuple[]{
-                tuple(initialWalletAmount - amount.getAmountUnit(), WalletType.MAIN),
-                tuple(amount.getAmountUnit(), WalletType.FUND_LOCK)
+                AssertionsForClassTypes.tuple(initialWalletAmount - amount.getAmountUnit(), WalletType.MAIN),
+                AssertionsForClassTypes.tuple(amount.getAmountUnit(), WalletType.FUND_LOCK)
         });
     }
 
@@ -77,9 +78,9 @@ class WalletApplicationServiceTest {
                   .isThrownBy(() -> applicationService.lockFunds(new WalletOwnerFundsLockCommand(amount, walletOwnerId)))
                   .withMessage("INSUFFICIENT_AVAILABILITY");
         Assertions.assertThat(walletRepository.loadWalletByOwnerId(walletOwnerId))
-                  .extracting(w -> tuple(w.getAmountUnit(), w.getType()))
+                  .extracting(w -> AssertionsForClassTypes.tuple(w.getAmountUnit(), w.getType()))
                   .containsExactly(
-                          tuple(initialWalletAmount, WalletType.MAIN));
+                          AssertionsForClassTypes.tuple(initialWalletAmount, WalletType.MAIN));
     }
 
     @Test
@@ -110,7 +111,7 @@ class WalletApplicationServiceTest {
         createMainWallet(mainWalletId, sourceWalletAmount, walletOwnerId);
         createMainWallet(destinationWallet, destinationWalletAmount, destinationWalletOwnerId);
         createFundLockWallet(fundLockWalletId, fundLockAmount, walletOwnerId);
-        MovementId fundLockId = moveMoneyToFundLock(fundLockWalletId, fundLockAmount);
+        TransferId fundLockId = moveMoneyToFundLock(fundLockWalletId, fundLockAmount);
         moveMoneyFromMainWallet(mainWalletId, fundLockAmount);
 
         // when
@@ -119,38 +120,72 @@ class WalletApplicationServiceTest {
         // then
         assertWallets(
                 walletOwnerId,
-                tuple(sourceWalletAmount, WalletType.MAIN),
-                tuple(0L, WalletType.FUND_LOCK));
+                AssertionsForClassTypes.tuple(sourceWalletAmount, WalletType.MAIN),
+                AssertionsForClassTypes.tuple(0L, WalletType.FUND_LOCK));
 
         assertWallets(
                 destinationWalletOwnerId,
-                tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
+                AssertionsForClassTypes.tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
+    }
+
+    @Test
+    void shouldRaiseErrorFundLockAlreadyCollected() {
+        // given
+        WalletID mainWalletId = new WalletID(UUID.randomUUID().toString());
+        WalletID destinationWallet = new WalletID(UUID.randomUUID().toString());
+        WalletID fundLockWalletId = new WalletID(UUID.randomUUID().toString());
+        WalletOwnerId walletOwnerId = new WalletOwnerId(UUID.randomUUID().toString());
+        WalletOwnerId destinationWalletOwnerId = new WalletOwnerId(UUID.randomUUID().toString());
+        long fundLockAmount = 20_00L;
+        long sourceWalletAmount = 400_00L - fundLockAmount;
+        long destinationWalletAmount = 10L;
+        createMainWallet(mainWalletId, sourceWalletAmount, walletOwnerId);
+        createMainWallet(destinationWallet, destinationWalletAmount, destinationWalletOwnerId);
+        createFundLockWallet(fundLockWalletId, fundLockAmount, walletOwnerId);
+        TransferId fundLockId = moveMoneyToFundLock(fundLockWalletId, fundLockAmount);
+        moveMoneyFromMainWallet(mainWalletId, fundLockAmount);
+
+        // when
+        applicationService.collectFundLock(WalletOwnerFundsLockCollectCommand.of(fundLockId, destinationWalletOwnerId));
+
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                  .isThrownBy(() -> applicationService.collectFundLock(WalletOwnerFundsLockCollectCommand.of(fundLockId, destinationWalletOwnerId)));
+
+        // then
+        assertWallets(
+                walletOwnerId,
+                AssertionsForClassTypes.tuple(sourceWalletAmount, WalletType.MAIN),
+                AssertionsForClassTypes.tuple(0L, WalletType.FUND_LOCK));
+
+        assertWallets(
+                destinationWalletOwnerId,
+                AssertionsForClassTypes.tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
     }
 
     private void assertWallets(WalletOwnerId walletOwnerId, Tuple... wallets) {
         Assertions.assertThat(walletRepository.loadWalletByOwnerId(walletOwnerId))
-                  .extracting(w -> tuple(w.getAmountUnit(), w.getType()))
+                  .extracting(w -> AssertionsForClassTypes.tuple(w.getAmountUnit(), w.getType()))
                   .containsExactlyInAnyOrder(wallets);
     }
 
     private void moveMoneyFromMainWallet(WalletID mainWalletId, long fundLockAmount) {
-        walletRepository.insertMovement(MovementBuilder.aMovement()
+        walletRepository.insertTransfer(TransferBuilder.aTransfer()
                                                        .withWalletType(WalletType.MAIN)
                                                        .withWalletId(mainWalletId)
                                                        .withAmount(new Amount(fundLockAmount, "EUR"))
-                                                       .withDirection(MovementDirection.OUT)
-                                                       .withId(new MovementId(UUID.randomUUID().toString()))
+                                                       .withDirection(TransferDirection.OUT)
+                                                       .withId(new TransferId(UUID.randomUUID().toString()))
                                                        .build());
     }
 
-    private MovementId moveMoneyToFundLock(WalletID fundLockWalletId, long fundLockAmount) {
-        MovementId fundLockId;
-        fundLockId = walletRepository.insertMovement(MovementBuilder.aMovement()
+    private TransferId moveMoneyToFundLock(WalletID fundLockWalletId, long fundLockAmount) {
+        TransferId fundLockId;
+        fundLockId = walletRepository.insertTransfer(TransferBuilder.aTransfer()
                                                                     .withWalletId(fundLockWalletId)
                                                                     .withWalletType(WalletType.FUND_LOCK)
                                                                     .withAmount(new Amount(fundLockAmount, "EUR"))
-                                                                    .withDirection(MovementDirection.IN)
-                                                                    .withId(new MovementId(UUID.randomUUID().toString()))
+                                                                    .withDirection(TransferDirection.IN)
+                                                                    .withId(new TransferId(UUID.randomUUID().toString()))
                                                                     .build());
         return fundLockId;
     }

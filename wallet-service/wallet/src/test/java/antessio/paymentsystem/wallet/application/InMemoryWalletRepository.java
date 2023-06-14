@@ -10,10 +10,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import antessio.paymentsystem.wallet.MovementId;
+import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwnerId;
-import antessio.paymentsystem.wallet.domain.Movement;
+import antessio.paymentsystem.wallet.application.WalletRepository;
+import antessio.paymentsystem.wallet.domain.Transfer;
 import antessio.paymentsystem.wallet.domain.Wallet;
 import antessio.paymentsystem.wallet.domain.WalletBuilder;
 import antessio.paymentsystem.wallet.domain.WalletsUpdate;
@@ -21,8 +22,8 @@ import antessio.paymentsystem.wallet.domain.WalletsUpdate;
 public class InMemoryWalletRepository implements WalletRepository {
 
     private Map<WalletID, Wallet> wallets = new HashMap<>();
-    private Map<WalletID, List<Movement>> movementsByWalletId = new HashMap<>();
-    private Map<MovementId, Movement> movements = new HashMap<>();
+    private Map<WalletID, List<Transfer>> transfersByWalletId = new HashMap<>();
+    private Map<TransferId, Transfer> transfers = new HashMap<>();
 
     @Override
     public Optional<Wallet> loadWalletById(WalletID id) {
@@ -30,12 +31,12 @@ public class InMemoryWalletRepository implements WalletRepository {
     }
 
     @Override
-    public List<MovementId> updateWallet(WalletsUpdate walletsUpdate) {
-        MovementId sourceMovementId = insertMovement(walletsUpdate.getSourceWalletMovement());
-        MovementId destinationMovementId = insertMovement(walletsUpdate.getDestinationWalletMovement());
+    public List<TransferId> updateWallet(WalletsUpdate walletsUpdate) {
+        TransferId sourceTransferId = insertTransfer(walletsUpdate.getSourceWalletMovement());
+        TransferId destinationTransferId = insertTransfer(walletsUpdate.getDestinationWalletMovement());
         updateWallet(wallets.get(walletsUpdate.getSourceWallet().getId()), walletsUpdate.getSourceWallet());
         updateWallet(wallets.get(walletsUpdate.getDestinationWallet().getId()), walletsUpdate.getDestinationWallet());
-        return List.of(sourceMovementId, destinationMovementId);
+        return List.of(sourceTransferId, destinationTransferId);
     }
 
 
@@ -63,13 +64,20 @@ public class InMemoryWalletRepository implements WalletRepository {
     }
 
     @Override
-    public Optional<Movement> loadMovementById(MovementId movementId) {
-        return Optional.ofNullable(movements.get(movementId));
+    public Optional<Transfer> loadTransferById(TransferId transferId) {
+        return Optional.ofNullable(transfers.get(transferId));
     }
 
     @Override
-    public Stream<Movement> loadMovementsByWalletId(WalletID walletID) {
-        return movementsByWalletId.get(walletID).stream();
+    public Stream<Transfer> loadTransfersByWalletId(WalletID walletID) {
+        return transfersByWalletId.get(walletID).stream();
+    }
+
+    @Override
+    public List<Transfer> loadTransfersByOperationId(String operationId) {
+        return transfers.values().stream()
+                        .filter(t -> t.getOperationId()==null || t.getOperationId().equals(operationId))
+                        .collect(Collectors.toList());
     }
 
     private void updateWallet(Wallet existingWallet, Wallet newWallet) {
@@ -86,21 +94,21 @@ public class InMemoryWalletRepository implements WalletRepository {
         wallets.put(newWallet.getId(), newWalletUpdated);
     }
 
-    MovementId insertMovement(Movement movement) {
-        movements.put(movement.getId(), movement);
-        if (!movementsByWalletId.containsKey(movement.getWalletId())) {
-            movementsByWalletId.put(movement.getWalletId(), new ArrayList<>());
+    TransferId insertTransfer(Transfer transfer) {
+        transfers.put(transfer.getId(), transfer);
+        if (!transfersByWalletId.containsKey(transfer.getWalletId())) {
+            transfersByWalletId.put(transfer.getWalletId(), new ArrayList<>());
         }
-        movementsByWalletId.get(movement.getWalletId()).add(movement);
-        return movement.getId();
+        transfersByWalletId.get(transfer.getWalletId()).add(transfer);
+        return transfer.getId();
     }
 
 
     public void deleteWallet(WalletID walletID) {
-        Optional.ofNullable(movementsByWalletId.get(walletID))
-                .ifPresent(m -> m.stream().map(Movement::getId)
-                                 .forEach(movements::remove));
-        movementsByWalletId.remove(walletID);
+        Optional.ofNullable(transfersByWalletId.get(walletID))
+                .ifPresent(m -> m.stream().map(Transfer::getId)
+                                 .forEach(transfers::remove));
+        transfersByWalletId.remove(walletID);
         wallets.remove(walletID);
     }
 
