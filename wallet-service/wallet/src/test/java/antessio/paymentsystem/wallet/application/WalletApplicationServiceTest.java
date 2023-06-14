@@ -2,10 +2,10 @@ package antessio.paymentsystem.wallet.application;
 
 import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,14 +23,15 @@ import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwner;
 import antessio.paymentsystem.wallet.WalletOwnerId;
 import antessio.paymentsystem.wallet.WalletType;
+import antessio.paymentsystem.wallet.domain.Transfer;
 import antessio.paymentsystem.wallet.domain.TransferBuilder;
 import antessio.paymentsystem.wallet.domain.WalletBuilder;
 
 class WalletApplicationServiceTest {
 
-    private InMemoryWalletRepository walletRepository = new InMemoryWalletRepository();
-    private SimpleMessageBroker messageBroker = new SimpleMessageBroker();
-    private SerializationService serializationService = new ObjectMapperSerializationService();
+    private final InMemoryWalletRepository walletRepository = new InMemoryWalletRepository();
+    private final SimpleMessageBroker messageBroker = new SimpleMessageBroker();
+    private final SerializationService serializationService = new ObjectMapperSerializationService();
 
     private WalletApplicationService applicationService;
 
@@ -58,11 +59,19 @@ class WalletApplicationServiceTest {
         applicationService.lockFunds(new WalletOwnerFundsLockCommand(amount, walletOwnerId));
 
         //then
-        assertWallets(walletOwnerId, new Tuple[]{
-                AssertionsForClassTypes.tuple(initialWalletAmount - amount.getAmountUnit(), WalletType.MAIN),
-                AssertionsForClassTypes.tuple(amount.getAmountUnit(), WalletType.FUND_LOCK)
-        });
+        assertWallets(
+                walletOwnerId,
+                tuple(initialWalletAmount - amount.getAmountUnit(), WalletType.MAIN),
+                tuple(amount.getAmountUnit(), WalletType.FUND_LOCK));
+
+        assertTransfers(
+                walletOwnerId,
+                tuple(amount.getAmountUnit(), TransferDirection.IN, WalletType.FUND_LOCK),
+                tuple(amount.getAmountUnit(), TransferDirection.OUT, WalletType.MAIN));
+
+
     }
+
 
     @Test
     void shouldRaiseErrorOnFundLockInsufficientAvailability() {
@@ -77,16 +86,13 @@ class WalletApplicationServiceTest {
         Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
                   .isThrownBy(() -> applicationService.lockFunds(new WalletOwnerFundsLockCommand(amount, walletOwnerId)))
                   .withMessage("INSUFFICIENT_AVAILABILITY");
-        Assertions.assertThat(walletRepository.loadWalletByOwnerId(walletOwnerId))
-                  .extracting(w -> AssertionsForClassTypes.tuple(w.getAmountUnit(), w.getType()))
-                  .containsExactly(
-                          AssertionsForClassTypes.tuple(initialWalletAmount, WalletType.MAIN));
+        assertWallets(walletOwnerId, tuple(initialWalletAmount, WalletType.MAIN));
+        assertTransfers(walletOwnerId);
     }
 
     @Test
     void shouldRaiseErrorOnFundLockWalletNotFound() {
         Amount amount = new Amount(30_00L, "EUR");
-        long initialWalletAmount = 1_00L;
         WalletOwnerId walletOwnerId = new WalletOwnerId(UUID.randomUUID().toString());
         // when
         //then
@@ -112,7 +118,7 @@ class WalletApplicationServiceTest {
         createMainWallet(destinationWallet, destinationWalletAmount, destinationWalletOwnerId);
         createFundLockWallet(fundLockWalletId, fundLockAmount, walletOwnerId);
         TransferId fundLockId = moveMoneyToFundLock(fundLockWalletId, fundLockAmount);
-        moveMoneyFromMainWallet(mainWalletId, fundLockAmount);
+        moveMoneyFromMainWallet(mainWalletId, fundLockAmount, UUID.randomUUID().toString());
 
         // when
         applicationService.collectFundLock(WalletOwnerFundsLockCollectCommand.of(fundLockId, destinationWalletOwnerId));
@@ -120,12 +126,22 @@ class WalletApplicationServiceTest {
         // then
         assertWallets(
                 walletOwnerId,
-                AssertionsForClassTypes.tuple(sourceWalletAmount, WalletType.MAIN),
-                AssertionsForClassTypes.tuple(0L, WalletType.FUND_LOCK));
+                tuple(sourceWalletAmount, WalletType.MAIN),
+                tuple(0L, WalletType.FUND_LOCK));
+
+        assertTransfers(
+                walletOwnerId,
+                tuple(fundLockAmount, TransferDirection.OUT, WalletType.MAIN),
+                tuple(fundLockAmount, TransferDirection.IN, WalletType.FUND_LOCK),
+                tuple(fundLockAmount, TransferDirection.OUT, WalletType.FUND_LOCK));
 
         assertWallets(
                 destinationWalletOwnerId,
-                AssertionsForClassTypes.tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
+                tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
+
+        assertTransfers(
+                destinationWalletOwnerId,
+                tuple(fundLockAmount, TransferDirection.IN, WalletType.MAIN));
     }
 
     @Test
@@ -143,7 +159,7 @@ class WalletApplicationServiceTest {
         createMainWallet(destinationWallet, destinationWalletAmount, destinationWalletOwnerId);
         createFundLockWallet(fundLockWalletId, fundLockAmount, walletOwnerId);
         TransferId fundLockId = moveMoneyToFundLock(fundLockWalletId, fundLockAmount);
-        moveMoneyFromMainWallet(mainWalletId, fundLockAmount);
+        moveMoneyFromMainWallet(mainWalletId, fundLockAmount, UUID.randomUUID().toString());
 
         // when
         applicationService.collectFundLock(WalletOwnerFundsLockCollectCommand.of(fundLockId, destinationWalletOwnerId));
@@ -154,27 +170,28 @@ class WalletApplicationServiceTest {
         // then
         assertWallets(
                 walletOwnerId,
-                AssertionsForClassTypes.tuple(sourceWalletAmount, WalletType.MAIN),
-                AssertionsForClassTypes.tuple(0L, WalletType.FUND_LOCK));
+                tuple(sourceWalletAmount, WalletType.MAIN),
+                tuple(0L, WalletType.FUND_LOCK));
 
         assertWallets(
                 destinationWalletOwnerId,
-                AssertionsForClassTypes.tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
+                tuple(destinationWalletAmount + fundLockAmount, WalletType.MAIN));
     }
 
     private void assertWallets(WalletOwnerId walletOwnerId, Tuple... wallets) {
         Assertions.assertThat(walletRepository.loadWalletByOwnerId(walletOwnerId))
-                  .extracting(w -> AssertionsForClassTypes.tuple(w.getAmountUnit(), w.getType()))
+                  .extracting(w -> tuple(w.getAmountUnit(), w.getType()))
                   .containsExactlyInAnyOrder(wallets);
     }
 
-    private void moveMoneyFromMainWallet(WalletID mainWalletId, long fundLockAmount) {
+    private void moveMoneyFromMainWallet(WalletID mainWalletId, long fundLockAmount, String operationId) {
         walletRepository.insertTransfer(TransferBuilder.aTransfer()
                                                        .withWalletType(WalletType.MAIN)
                                                        .withWalletId(mainWalletId)
                                                        .withAmount(new Amount(fundLockAmount, "EUR"))
                                                        .withDirection(TransferDirection.OUT)
                                                        .withId(new TransferId(UUID.randomUUID().toString()))
+                                                       .withOperationId(operationId)
                                                        .build());
     }
 
@@ -206,6 +223,18 @@ class WalletApplicationServiceTest {
                                                           .withOwnerId(ownerId)
                                                           .withType(main)
                                                           .build());
+    }
+
+    private void assertTransfers(WalletOwnerId walletOwnerId, Tuple... expectedTransfers) {
+        List<Transfer> transfersByWalletOwnerId = walletRepository.getTransfersByWalletOwnerId(walletOwnerId);
+        if (expectedTransfers.length > 0) {
+            Assertions.assertThat(transfersByWalletOwnerId)
+                      .extracting(t -> tuple(t.getAmount().getAmountUnit(), t.getDirection(), t.getWalletType()))
+                      .containsExactlyInAnyOrder(expectedTransfers);
+        } else {
+            Assertions.assertThat(transfersByWalletOwnerId).hasSize(0);
+
+        }
     }
 
 }

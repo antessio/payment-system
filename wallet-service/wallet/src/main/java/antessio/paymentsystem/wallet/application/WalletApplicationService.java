@@ -224,8 +224,9 @@ public class WalletApplicationService implements WalletService {
         Long operationSum = walletRepository.loadTransfersByOperationId(operationId)
                                             .stream()
                                             .filter(t -> t.getWalletId().equals(walletId))
-                                            .map(Transfer::getAmount)
-                                            .map(Amount::getAmountUnit)
+                                            .map(t -> t.getDirection() == TransferDirection.IN
+                                                      ? t.getAmount().getAmountUnit()
+                                                      : t.getAmount().getAmountUnit() * -1)
                                             .reduce(Long::sum)
                                             .orElse(0L);
         return operationSum == 0L;

@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;
 import antessio.paymentsystem.wallet.WalletOwnerId;
-import antessio.paymentsystem.wallet.application.WalletRepository;
 import antessio.paymentsystem.wallet.domain.Transfer;
 import antessio.paymentsystem.wallet.domain.Wallet;
 import antessio.paymentsystem.wallet.domain.WalletBuilder;
@@ -101,6 +100,17 @@ public class InMemoryWalletRepository implements WalletRepository {
         }
         transfersByWalletId.get(transfer.getWalletId()).add(transfer);
         return transfer.getId();
+    }
+
+    public List<Transfer> getTransfersByWalletOwnerId(WalletOwnerId walletOwnerId){
+        List<WalletID> walletIds = this.loadWalletByOwnerId(walletOwnerId)
+                .stream()
+                .map(Wallet::getId)
+                .toList();
+        return transfers.values()
+                .stream()
+                .filter(t -> walletIds.contains(t.getWalletId()))
+                .collect(Collectors.toList());
     }
 
 
