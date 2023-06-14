@@ -3,6 +3,7 @@ package antessio.paymentsystem.wallet.application;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import antessio.paymentsystem.api.wallet.WalletFundsLockCollectCommand;
@@ -52,6 +53,14 @@ public class WalletApplicationService implements WalletService {
         return walletRepository.loadWalletById(id)
                                .map(WalletDTOAdapter::new)
                                .orElseThrow(() -> new IllegalArgumentException("wallet with id " + id.getId() + " not found"));
+    }
+
+    @Override
+    public List<WalletDTO> getWalletsByWalletOwner(WalletOwnerId walletOwnerId) {
+        return walletRepository.loadWalletByOwnerId(walletOwnerId)
+                .stream()
+                .map(WalletDTOAdapter::new)
+                .collect(Collectors.toList());
     }
 
     private List<TransferDTO> moveMoney(Wallet fromWallet, Wallet toWallet, Amount amount, String sourceOperationId) {
@@ -153,7 +162,7 @@ public class WalletApplicationService implements WalletService {
     }
 
     @Override
-    public Stream<TransferDTO> getMovements(WalletID walletID) {
+    public Stream<TransferDTO> getTransfers(WalletID walletID) {
         Wallet wallet = loadWalletById(walletID);
         return walletRepository.loadTransfersByWalletId(wallet.getId())
                                .map(TransferDTOAdapter::new);
