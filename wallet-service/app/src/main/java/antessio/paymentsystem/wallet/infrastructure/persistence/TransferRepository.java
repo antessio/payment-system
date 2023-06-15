@@ -10,7 +10,7 @@ public interface TransferRepository extends JpaRepository<TransferEntity, String
                                             JpaSpecificationExecutor<TransferEntity> {
 
 
-    @Query(value = "SELECT * FROM movement WHERE walletId = ?#{#walletId} AND id > ?#{#cursor} ORDER BY id LIMIT ?#{#size}", nativeQuery = true)
+    @Query(value = "SELECT * FROM transfer WHERE walletId = ?#{#walletId} AND id > ?#{#cursor} ORDER BY id LIMIT ?#{#size}", nativeQuery = true)
     List<TransferEntity> findByWalletIdStartingFrom(String walletId, String cursor, int size);
 
 

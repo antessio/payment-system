@@ -163,8 +163,13 @@ public class WalletApplicationService implements WalletService {
 
     @Override
     public Stream<TransferDTO> getTransfers(WalletID walletID) {
+        return this.getTransfers(walletID, null);
+    }
+
+    @Override
+    public Stream<TransferDTO> getTransfers(WalletID walletID, TransferId cursor) {
         Wallet wallet = loadWalletById(walletID);
-        return walletRepository.loadTransfersByWalletId(wallet.getId())
+        return walletRepository.loadTransfersByWalletId(wallet.getId(), cursor)
                                .map(TransferDTOAdapter::new);
     }
 

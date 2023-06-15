@@ -23,7 +23,7 @@ public interface WalletRepository {
 
     Optional<Transfer> loadTransferById(TransferId transferId);
 
-    Stream<Transfer> loadTransfersByWalletId(WalletID walletID);
+    Stream<Transfer> loadTransfersByWalletId(WalletID walletID, TransferId cursor);
 
     List<Transfer> loadTransfersByOperationId(String operationId);
 

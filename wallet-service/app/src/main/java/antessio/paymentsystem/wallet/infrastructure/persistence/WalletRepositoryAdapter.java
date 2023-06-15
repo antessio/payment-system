@@ -120,10 +120,10 @@ public class WalletRepositoryAdapter implements WalletRepository {
     }
 
     @Override
-    public Stream<Transfer> loadTransfersByWalletId(WalletID walletID) {
+    public Stream<Transfer> loadTransfersByWalletId(WalletID walletID, TransferId cursor) {
 
         return Stream.iterate(
-                             fetchMovement(walletID, null, BATCH_SIZE),
+                             fetchMovement(walletID, cursor.getId(), BATCH_SIZE),
                              List::isEmpty,
                              l -> fetchMovement(walletID, l.get(l.size() - 1).getId(), BATCH_SIZE))
                      .flatMap(List::stream)

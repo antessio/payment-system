@@ -23,4 +23,6 @@ public interface WalletService {
 
     Stream<TransferDTO> getTransfers(WalletID walletID);
 
+    Stream<TransferDTO> getTransfers(WalletID walletID, TransferId startingFrom);
+
 }

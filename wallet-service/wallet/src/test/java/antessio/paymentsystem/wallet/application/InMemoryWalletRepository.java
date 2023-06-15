@@ -68,14 +68,15 @@ public class InMemoryWalletRepository implements WalletRepository {
     }
 
     @Override
-    public Stream<Transfer> loadTransfersByWalletId(WalletID walletID) {
-        return transfersByWalletId.get(walletID).stream();
+    public Stream<Transfer> loadTransfersByWalletId(WalletID walletID, TransferId cursor) {
+
+        return transfersByWalletId.get(walletID).stream().filter(t -> t.getId().getId().compareTo(cursor.getId()) < 0);
     }
 
     @Override
     public List<Transfer> loadTransfersByOperationId(String operationId) {
         return transfers.values().stream()
-                        .filter(t -> t.getOperationId()==null || t.getOperationId().equals(operationId))
+                        .filter(t -> t.getOperationId() == null || t.getOperationId().equals(operationId))
                         .collect(Collectors.toList());
     }
 
@@ -102,15 +103,15 @@ public class InMemoryWalletRepository implements WalletRepository {
         return transfer.getId();
     }
 
-    public List<Transfer> getTransfersByWalletOwnerId(WalletOwnerId walletOwnerId){
+    public List<Transfer> getTransfersByWalletOwnerId(WalletOwnerId walletOwnerId) {
         List<WalletID> walletIds = this.loadWalletByOwnerId(walletOwnerId)
-                .stream()
-                .map(Wallet::getId)
-                .toList();
+                                       .stream()
+                                       .map(Wallet::getId)
+                                       .toList();
         return transfers.values()
-                .stream()
-                .filter(t -> walletIds.contains(t.getWalletId()))
-                .collect(Collectors.toList());
+                        .stream()
+                        .filter(t -> walletIds.contains(t.getWalletId()))
+                        .collect(Collectors.toList());
     }
 
 
