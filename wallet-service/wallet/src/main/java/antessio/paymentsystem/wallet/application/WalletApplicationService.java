@@ -153,6 +153,9 @@ public class WalletApplicationService implements WalletService {
         return collectFundLock(command.getFundLockId(), destinationWallet);
     }
 
+    //TODO expires fund lock
+    //TODO cancel fund lock
+    //TODO charges: start from the receiver
 
     @Override
     public TransferId collectFundLock(WalletOwnerFundsLockCollectCommand command) {

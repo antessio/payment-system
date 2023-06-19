@@ -4,17 +4,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import antessio.paymentsystem.api.wallet.TransferDTO;
 import antessio.paymentsystem.api.wallet.WalletDTO;
+import antessio.paymentsystem.api.wallet.WalletFundsLockCollectCommand;
+import antessio.paymentsystem.api.wallet.WalletOwnerFundsLockCollectCommand;
+import antessio.paymentsystem.api.wallet.WalletOwnerFundsLockCommand;
 import antessio.paymentsystem.common.PaginatedList;
 import antessio.paymentsystem.wallet.Amount;
 import antessio.paymentsystem.wallet.TransferId;
@@ -30,6 +35,23 @@ public class WalletController {
 
     public WalletController(WalletApplicationService walletApplicationService) {
         this.walletApplicationService = walletApplicationService;
+    }
+
+    @PostMapping("{ownerId}/fundLock")
+    public ResponseEntity<String> createFundLock(@PathVariable String ownerId,
+                                                 @RequestBody CreateFundLockHttpRequest createFundLockHttpRequest){
+        TransferId fundLock = walletApplicationService.lockFunds(new WalletOwnerFundsLockCommand(
+                createFundLockHttpRequest.getAmount(),
+                new WalletOwnerId(ownerId)));
+        return ResponseEntity.ok(fundLock.getId());
+    }
+
+    @PostMapping("{ownerId}/fundLock/{fundLockId}/collect")
+    public ResponseEntity<Void> collectFundLock(@PathVariable String ownerId,
+                                                @PathVariable String fundLockId){
+
+        walletApplicationService.collectFundLock(WalletOwnerFundsLockCollectCommand.of(new TransferId(fundLockId), new WalletOwnerId(ownerId)));
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/{ownerId}")
