@@ -1,5 +1,6 @@
-import {Customer} from "../src/customer/domain/customer_model";
+import {Customer, CustomerDomainEvent} from "../src/customer/domain/customer_model";
 import {CustomerRepository} from "../src/customer/domain/customer_repository";
+import {CustomerMessageBroker} from "../src/customer/domain/customer_message_broker";
 
 
 export class InMemoryCustomerRepository implements CustomerRepository {
@@ -32,5 +33,21 @@ export class InMemoryCustomerRepository implements CustomerRepository {
 
     async deleteCustomer(id: string): Promise<void> {
         this.customers = this.customers.filter((c) => c.id !== id);
+    }
+}
+
+
+
+
+export class InMemoryMessageBroker implements CustomerMessageBroker{
+    private _events: CustomerDomainEvent[] = [];
+
+    publishEvent(event: CustomerDomainEvent) {
+        this._events.push(event)
+    }
+
+
+    get events(): CustomerDomainEvent[] {
+        return this._events;
     }
 }

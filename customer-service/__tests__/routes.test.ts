@@ -3,9 +3,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import customerRoutes from '../src/customer/infrastructure/customer_routes';
 import { Customer } from '../src/customer/domain/customer_model';
-import {InMemoryCustomerRepository} from "./testHelpers";
+import {InMemoryCustomerRepository, InMemoryMessageBroker} from "./testHelpers";
 import {CustomerService} from "../src/customer/application/customer_service";
-import {InMemoryMessageBroker} from "../src/customer/infrastructure/in_memory_message_broker";
 
 const app = express();
 const repository = new InMemoryCustomerRepository();
