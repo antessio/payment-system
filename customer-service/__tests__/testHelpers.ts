@@ -1,27 +1,20 @@
-// repository.ts
-import { Customer } from './models';
+import {Customer} from "../src/customer/domain/customer_model";
+import {CustomerRepository} from "../src/customer/domain/customer_repository";
 
-export interface CustomerRepository {
-    getAllCustomers(): Promise<Customer[]>;
-    getCustomerById(id: string): Promise<Customer | null>;
-    createCustomer(customer: Customer): Promise<Customer>;
-    updateCustomer(id: string, customer: Customer): Promise<Customer | null>;
-    deleteCustomer(id: string): Promise<void>;
-}
 
 export class InMemoryCustomerRepository implements CustomerRepository {
     private customers: Customer[] = [];
 
-    async getAllCustomers(): Promise<Customer[]> {
+    async loadAllCustomers(): Promise<Customer[]> {
         return this.customers;
     }
 
-    async getCustomerById(id: string): Promise<Customer | null> {
+    async loadCustomerById(id: string): Promise<Customer | null> {
         const customer = this.customers.find((c) => c.id === id);
         return customer || null;
     }
 
-    async createCustomer(customer: Customer): Promise<Customer> {
+    async saveCustomer(customer: Customer): Promise<Customer> {
         this.customers.push(customer);
         return customer;
     }

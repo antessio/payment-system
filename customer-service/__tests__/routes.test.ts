@@ -1,14 +1,17 @@
 import request from 'supertest';
 import express from 'express';
 import bodyParser from 'body-parser';
-import customerRoutes from '../routes';
-import { InMemoryCustomerRepository } from '../repository';
-import { Customer } from '../models';
+import customerRoutes from '../src/customer/infrastructure/customer_routes';
+import { Customer } from '../src/customer/domain/customer_model';
+import {InMemoryCustomerRepository} from "./testHelpers";
+import {CustomerService} from "../src/customer/application/customer_service";
+import {InMemoryMessageBroker} from "../src/customer/infrastructure/in_memory_message_broker";
 
 const app = express();
 const repository = new InMemoryCustomerRepository();
 app.use(bodyParser.json());
-app.use('/api', customerRoutes(repository));
+let inMemoryMessageBroker = new InMemoryMessageBroker();
+app.use('/api', customerRoutes(new CustomerService(repository, inMemoryMessageBroker)));
 
 const testCustomer: Customer = {
     id: '1',
@@ -19,7 +22,7 @@ const testCustomer: Customer = {
 
 beforeEach(async () => {
     // Clear the repository before each test
-    for (const c of (await repository.getAllCustomers())) {
+    for (const c of (await repository.loadAllCustomers())) {
         await repository.deleteCustomer(c.id);
     }
 });
@@ -32,7 +35,7 @@ describe('GET /api/customers', () => {
     });
 
     it('should return an array of customers', async () => {
-        await repository.createCustomer(testCustomer);
+        await repository.saveCustomer(testCustomer);
 
         const response = await request(app).get('/api/customers');
         expect(response.status).toBe(200);
@@ -48,7 +51,7 @@ describe('GET /api/customers/:id', () => {
     });
 
     it('should return the customer when it exists', async () => {
-        await repository.createCustomer(testCustomer);
+        await repository.saveCustomer(testCustomer);
 
         const response = await request(app).get(`/api/customers/${testCustomer.id}`);
         expect(response.status).toBe(200);
@@ -76,7 +79,7 @@ describe('POST /api/customers', () => {
     });
 
     it('should return 409 when customer ID already exists', async () => {
-        await repository.createCustomer(testCustomer);
+        await repository.saveCustomer(testCustomer);
 
         const response = await request(app)
             .post('/api/customers')
@@ -89,7 +92,7 @@ describe('POST /api/customers', () => {
 
 describe('PUT /api/customers/:id', () => {
     it('should update an existing customer', async () => {
-        await repository.createCustomer(testCustomer);
+        await repository.saveCustomer(testCustomer);
 
         const updatedCustomer: Customer = {
             id: '1',
@@ -118,7 +121,7 @@ describe('PUT /api/customers/:id', () => {
 
 describe('DELETE /api/customers/:id', () => {
     it('should delete an existing customer', async () => {
-        await repository.createCustomer(testCustomer);
+        await repository.saveCustomer(testCustomer);
 
         const response = await request(app).delete(`/api/customers/${testCustomer.id}`);
 

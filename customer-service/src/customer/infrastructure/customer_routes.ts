@@ -1,22 +1,22 @@
-// routes.ts
+// customer_routes.ts
 import express, { Request, Response } from 'express';
-import { Customer } from './models';
-import {CustomerRepository} from "./repository";
+import { Customer } from '../domain/customer_model';
+import {CustomerServiceInterface} from "../application/customer_service";
 
 const router = express.Router();
 
 
 
-function customerRoutes(customerRepository: CustomerRepository) {
+function customerRoutes(customerService: CustomerServiceInterface) {
     router.get('/customers', async (req: Request, res: Response) => {
-        const customers = await customerRepository.getAllCustomers();
+        const customers = await customerService.getAllCustomers();
         res.json(customers);
 
     });
 
     router.get('/customers/:id', async (req: Request, res: Response) => {
         const customerId = req.params.id;
-        const customer = await customerRepository.getCustomerById(customerId);
+        const customer = await customerService.getCustomerById(customerId);
         if (!customer) {
             return res.status(404).json({message: 'Customer not found'});
         }
@@ -32,13 +32,13 @@ function customerRoutes(customerRepository: CustomerRepository) {
         }
 
         // Check if a customer with the same ID already exists
-        const existingCustomer = await customerRepository.getCustomerById(newCustomer.id)
+        const existingCustomer = await customerService.getCustomerById(newCustomer.id)
         if (existingCustomer) {
             return res.status(409).json({message: 'Customer ID already exists'});
         }
 
         // Add the new customer to the array
-        await customerRepository.createCustomer(newCustomer);
+        await customerService.createCustomer(newCustomer);
 
         res.status(201).json(newCustomer);
     });
@@ -48,7 +48,7 @@ function customerRoutes(customerRepository: CustomerRepository) {
         const updatedCustomerRequest: Customer = req.body;
 
         // Find the customer to update
-        const customer = await customerRepository.getCustomerById(customerId);
+        const customer = await customerService.getCustomerById(customerId);
 
         if (!customer) {
             return res.status(404).json({message: 'Customer not found'});
@@ -59,7 +59,7 @@ function customerRoutes(customerRepository: CustomerRepository) {
         }
 
         // Update the customer
-        await customerRepository.updateCustomer(customerId, updatedCustomer);
+        await customerService.updateCustomer(customerId, updatedCustomer);
 
         res.json(updatedCustomer);
     });
@@ -68,12 +68,12 @@ function customerRoutes(customerRepository: CustomerRepository) {
         const customerId = req.params.id;
 
         // Find the customer to delete
-        const customer = await customerRepository.getCustomerById(customerId)
+        const customer = await customerService.getCustomerById(customerId)
         if (!customer) {
             return res.status(404).json({message: 'Customer not found'});
         }
         // Remove the customer from the array
-        await customerRepository.deleteCustomer(customerId)
+        await customerService.deleteCustomer(customerId)
 
 
 
