@@ -6,4 +6,5 @@ export interface CustomerRepository {
     saveCustomer(customer: Customer): Promise<Customer>;
     updateCustomer(id: string, customer: Customer): Promise<Customer | null>;
     deleteCustomer(id: string): Promise<void>;
+    loadByEmail(email: string): Promise<Customer | null>
 }

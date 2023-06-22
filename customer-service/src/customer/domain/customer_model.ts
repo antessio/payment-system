@@ -1,8 +1,69 @@
-export interface Customer {
-    id: string;
+export interface CustomerUpdateCommand{
+    name?: string;
+    email?: string;
+    iban?: string;
+}
+
+export interface CustomerUpdateNameCommand{
+    name: string;
+}
+
+export interface CustomerUpdateEmailCommand{
+    email: string;
+}
+export interface CustomerUpdateIbanCommand{
+    iban: string;
+}
+
+export interface CustomerCreateCommand{
     name: string;
     email: string;
     iban: string;
+}
+
+export class Customer {
+    private readonly _id: string;
+    private _name: string;
+    private _email: string;
+    private _iban: string;
+
+
+    constructor(id: string, name: string, email: string, iban: string) {
+        this._id = id;
+        this._name = name;
+        this._email = email;
+        this._iban = iban;
+    }
+
+
+    get id(): string {
+        return this._id;
+    }
+
+    get name(): string {
+        return this._name;
+    }
+
+    get email(): string {
+        return this._email;
+    }
+
+    get iban(): string {
+        return this._iban;
+    }
+
+
+    updateName(value: string): void{
+        this._name = value;
+    }
+
+    updateEmail(value: string): void{
+        this._email = value;
+    }
+
+    updateIban(value: string):void {
+        this._iban = value;
+    }
 }
 
 export abstract class CustomerDomainEvent {

@@ -2,6 +2,7 @@
 import { Customer } from '../domain/customer_model';
 import { MongoClient, Collection } from 'mongodb';
 import {CustomerRepository} from "../domain/customer_repository";
+import e from "express";
 
 
 
@@ -42,5 +43,9 @@ export class MongoCustomerRepository implements CustomerRepository {
 
     async deleteCustomer(id: string): Promise<void> {
         await this.collection.deleteOne({ id });
+    }
+
+    loadByEmail(email: string): Promise<Customer | null> {
+        return this.collection.findOne({email: email})
     }
 }

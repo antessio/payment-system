@@ -34,6 +34,10 @@ export class InMemoryCustomerRepository implements CustomerRepository {
     async deleteCustomer(id: string): Promise<void> {
         this.customers = this.customers.filter((c) => c.id !== id);
     }
+
+    loadByEmail(email: string): Promise<Customer | null> {
+        return Promise.resolve(this.customers.find(c => c.email == email) || null);
+    }
 }
 
 

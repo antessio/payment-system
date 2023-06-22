@@ -1,23 +1,29 @@
 import {
-    Customer,
+    Customer, CustomerCreateCommand,
     CustomerCreatedEvent,
     CustomerDeleted,
     CustomerDomainEvent,
     CustomerEmailUpdated,
     CustomerIbanUpdated,
-    CustomerNameUpdated
+    CustomerNameUpdated, CustomerUpdateCommand, CustomerUpdateEmailCommand, CustomerUpdateIbanCommand, CustomerUpdateNameCommand
 } from "../domain/customer_model";
 import {CustomerRepository} from "../domain/customer_repository";
 import {CustomerMessageBroker} from "../domain/customer_message_broker";
+import {v4 as uuidv4} from 'uuid';
+import {CustomerAlreadyExistError, CustomerNotExistingError} from "../domain/customer_error";
+
 
 export interface CustomerServiceInterface {
     getAllCustomers(): Promise<Customer[]>;
 
     getCustomerById(id: string): Promise<Customer | null>;
 
-    createCustomer(customer: Customer): Promise<Customer>;
+    createCustomer(createCommand: CustomerCreateCommand): Promise<Customer>;
 
-    updateCustomer(id: string, customer: Customer): Promise<Customer | null>;
+    updateCustomer(id: string, updateCommand: CustomerUpdateCommand): Promise<Customer|null>;
+    updateCustomerName(id: string, updateCommand: CustomerUpdateNameCommand): Promise<Customer|null>;
+    updateCustomerEmail(id: string, updateCommand: CustomerUpdateEmailCommand): Promise<Customer|null>;
+    updateCustomerIban(id: string, updateCommand: CustomerUpdateIbanCommand): Promise<Customer|null>;
 
     deleteCustomer(id: string): Promise<void>;
 }
@@ -31,18 +37,29 @@ export class CustomerService implements CustomerServiceInterface {
         this.messageBroker = messageBroker;
     }
 
-    createCustomer(customer: Customer): Promise<Customer> {
-        return this.repository.saveCustomer(customer)
-            .then(c => {
+    createCustomer(customerCreateCommand: CustomerCreateCommand): Promise<Customer> {
+        return this.repository.loadByEmail(customerCreateCommand.email).then(c=>{
+            if(c){
+                throw new CustomerAlreadyExistError(`customer already exist with email ${customerCreateCommand.email}`)
+            }else{
 
-                this.messageBroker.publishEvent(new CustomerCreatedEvent(
-                    c.id,
-                    c.name,
-                    c.email,
-                    c.iban
-                ))
-                return Promise.resolve(c);
-            });
+                return this.repository.saveCustomer(new Customer(
+                    uuidv4().toString(),
+                    customerCreateCommand.name,
+                    customerCreateCommand.email,
+                    customerCreateCommand.iban))
+                    .then(c => {
+
+                        this.messageBroker.publishEvent(new CustomerCreatedEvent(
+                            c.id,
+                            c.name,
+                            c.email,
+                            c.iban
+                        ))
+                        return Promise.resolve(c);
+                    });
+            }
+        })
     }
 
     deleteCustomer(id: string): Promise<void> {
@@ -60,32 +77,33 @@ export class CustomerService implements CustomerServiceInterface {
         return this.repository.loadCustomerById(id);
     }
 
-    updateCustomer(id: string, customer: Customer): Promise<Customer | null> {
+    updateCustomer(id: string, updateCommand: CustomerUpdateCommand): Promise<Customer|null> {
         return this.repository.loadCustomerById(id)
             .then((existingCustomer) => {
                 if (!existingCustomer) {
-                    throw new Error(`Customer with ID ${id} doesn't exist`);
+                    throw new CustomerNotExistingError(`Customer with ID ${id} doesn't exist`);
                 }
-
-                const updatedCustomer = {...existingCustomer, ...customer};
 
                 const events: CustomerDomainEvent[] = [];
 
                 // Check which fields have changed and add the corresponding domain events
-                if (existingCustomer.name !== updatedCustomer.name) {
-                    events.push(new CustomerNameUpdated(id, updatedCustomer.name));
+                if (updateCommand.name && existingCustomer.name !== updateCommand.name) {
+                    existingCustomer.updateName(updateCommand.name)
+                    events.push(new CustomerNameUpdated(id, updateCommand.name));
                 }
 
-                if (existingCustomer.email !== updatedCustomer.email) {
-                    events.push(new CustomerEmailUpdated(id, updatedCustomer.email));
+                if (updateCommand.email && existingCustomer.email !== updateCommand.email) {
+                    existingCustomer.updateEmail(updateCommand.email)
+                    events.push(new CustomerEmailUpdated(id, updateCommand.email));
                 }
 
-                if (existingCustomer.iban !== updatedCustomer.iban) {
-                    events.push(new CustomerIbanUpdated(id, updatedCustomer.iban));
+                if (updateCommand.iban && existingCustomer.iban !== updateCommand.iban) {
+                    existingCustomer.updateIban(updateCommand.iban)
+                    events.push(new CustomerIbanUpdated(id, updateCommand.iban));
                 }
 
-                // Perform the customer update in the repository
-                return this.repository.updateCustomer(id, updatedCustomer)
+                // Perform the updateCommand update in the repository
+                return this.repository.updateCustomer(id, existingCustomer)
                     .then((updatedCustomer) => {
                         // Publish the domain events
                         events.forEach((event) => {
@@ -97,6 +115,98 @@ export class CustomerService implements CustomerServiceInterface {
                     });
             });
 
+    }
+
+    updateCustomerEmail(id: string, updateCommand: CustomerUpdateEmailCommand): Promise<Customer | null> {
+        return this.repository.loadCustomerById(id)
+            .then((existingCustomer) => {
+                if (!existingCustomer) {
+                    throw new Error(`Customer with ID ${id} doesn't exist`);
+                }
+
+
+
+
+                const events: CustomerDomainEvent[] = [];
+
+
+                if (updateCommand.email && existingCustomer.email !== updateCommand.email) {
+                    existingCustomer.updateEmail(updateCommand.email)
+                    events.push(new CustomerEmailUpdated(id, updateCommand.email));
+                }
+
+                // Perform the updateCommand update in the repository
+                return this.repository.updateCustomer(id, existingCustomer)
+                    .then((updatedCustomer) => {
+                        // Publish the domain events
+                        events.forEach((event) => {
+                            // Assuming you have a method to publish the event
+                            this.messageBroker.publishEvent(event);
+                        });
+
+                        return Promise.resolve(updatedCustomer);
+                    });
+            });
+    }
+
+    updateCustomerIban(id: string, updateCommand: CustomerUpdateIbanCommand): Promise<Customer | null> {
+        return this.repository.loadCustomerById(id)
+            .then((existingCustomer) => {
+                if (!existingCustomer) {
+                    throw new Error(`Customer with ID ${id} doesn't exist`);
+                }
+
+
+
+
+                const events: CustomerDomainEvent[] = [];
+
+                if (updateCommand.iban && existingCustomer.iban !== updateCommand.iban) {
+                    existingCustomer.updateIban(updateCommand.iban)
+                    events.push(new CustomerIbanUpdated(id, updateCommand.iban));
+                }
+
+                // Perform the updateCommand update in the repository
+                return this.repository.updateCustomer(id, existingCustomer)
+                    .then((updatedCustomer) => {
+                        // Publish the domain events
+                        events.forEach((event) => {
+                            // Assuming you have a method to publish the event
+                            this.messageBroker.publishEvent(event);
+                        });
+
+                        return Promise.resolve(updatedCustomer);
+                    });
+            });
+    }
+    updateCustomerName(id: string, updateCommand: CustomerUpdateNameCommand): Promise<Customer | null> {
+        return this.repository.loadCustomerById(id)
+            .then((existingCustomer) => {
+                if (!existingCustomer) {
+                    throw new Error(`Customer with ID ${id} doesn't exist`);
+                }
+
+
+
+                const events: CustomerDomainEvent[] = [];
+
+                // Check which fields have changed and add the corresponding domain events
+                if (updateCommand.name && existingCustomer.name !== updateCommand.name) {
+                    existingCustomer.updateName(updateCommand.name)
+                    events.push(new CustomerNameUpdated(id, updateCommand.name));
+                }
+                // Perform the updateCommand update in the repository
+                return this.repository.updateCustomer(id, existingCustomer)
+                    .then((updatedCustomer) => {
+                        // Publish the domain events
+                        events.forEach((event) => {
+                            // Assuming you have a method to publish the event
+                            this.messageBroker.publishEvent(event);
+                        });
+
+                        return Promise.resolve(updatedCustomer);
+                    });
+            });
     }
 
 
