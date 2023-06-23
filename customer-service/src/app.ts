@@ -12,7 +12,7 @@ const port = 3000;
 app.use(bodyParser.json());
 
 // Routes
-app.use('/api', customerRoutes(new CustomerService(new MongoCustomerRepository(), new RabbitMQCustomerMessageBroker())));
+app.use('/api/customers', customerRoutes(new CustomerService(new MongoCustomerRepository(), new RabbitMQCustomerMessageBroker())));
 
 // Start the server
 app.listen(port, () => {

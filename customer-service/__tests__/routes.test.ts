@@ -10,7 +10,7 @@ const app = express();
 const repository = new InMemoryCustomerRepository();
 app.use(bodyParser.json());
 let inMemoryMessageBroker = new InMemoryMessageBroker();
-app.use('/api', customerRoutes(new CustomerService(repository, inMemoryMessageBroker)));
+app.use('/api/customers', customerRoutes(new CustomerService(repository, inMemoryMessageBroker)));
 
 function getTestCustomer(id: string, name: string, email: string, iban: string): Customer {
     return new Customer(id, name, email, iban)

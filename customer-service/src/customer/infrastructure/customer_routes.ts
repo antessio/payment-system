@@ -23,14 +23,14 @@ function convertToDTO(customer: Customer): CustomerDto {
 }
 
 function customerRoutes(customerService: CustomerServiceInterface) {
-    router.get('/customers', async (req: Request, res: Response) => {
+    router.get('/', async (req: Request, res: Response) => {
         const customers = (await customerService.getAllCustomers())
             .map(c => convertToDTO(c));
         res.json(customers);
 
     });
 
-    router.get('/customers/:id', async (req: Request, res: Response) => {
+    router.get('/:id', async (req: Request, res: Response) => {
         const customerId = req.params.id;
         const customer = await customerService.getCustomerById(customerId);
         if (!customer) {
@@ -39,7 +39,7 @@ function customerRoutes(customerService: CustomerServiceInterface) {
         res.json(convertToDTO(customer));
     });
 
-    router.post('/customers', async (req: Request, res: Response) => {
+    router.post('/', async (req: Request, res: Response) => {
         const newCustomer: CustomerCreateCommand = req.body;
 
         // Validate input
@@ -64,7 +64,7 @@ function customerRoutes(customerService: CustomerServiceInterface) {
         }
     });
 
-    router.put('/customers/:id', async (req: Request, res: Response) => {
+    router.put('/:id', async (req: Request, res: Response) => {
         const customerId = req.params.id;
         const updatedCustomerRequest: CustomerUpdateCommand = req.body;
 
@@ -87,7 +87,7 @@ function customerRoutes(customerService: CustomerServiceInterface) {
 
     });
 
-    router.delete('/customers/:id', async (req: Request, res: Response) => {
+    router.delete('/:id', async (req: Request, res: Response) => {
         const customerId = req.params.id;
 
         // Find the customer to delete
