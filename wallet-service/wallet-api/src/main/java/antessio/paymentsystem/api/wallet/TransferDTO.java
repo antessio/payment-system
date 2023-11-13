@@ -1,7 +1,7 @@
 package antessio.paymentsystem.api.wallet;
 
 
-import antessio.paymentsystem.wallet.Amount;
+import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.wallet.TransferDirection;
 import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;

@@ -1,7 +1,7 @@
 package antessio.paymentsystem.wallet.infrastructure.api;
 
 import antessio.paymentsystem.common.PaginatedList;
-import antessio.paymentsystem.wallet.Amount;
+import antessio.paymentsystem.common.Amount;
 
 public class WalletHttpResponse {
     private String id;

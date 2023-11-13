@@ -16,7 +16,7 @@ import antessio.paymentsystem.api.wallet.WalletOwnerFundsLockCommand;
 import antessio.paymentsystem.common.ObjectMapperSerializationService;
 import antessio.paymentsystem.common.SerializationService;
 import antessio.paymentsystem.common.SimpleMessageBroker;
-import antessio.paymentsystem.wallet.Amount;
+import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.wallet.TransferDirection;
 import antessio.paymentsystem.wallet.TransferId;
 import antessio.paymentsystem.wallet.WalletID;

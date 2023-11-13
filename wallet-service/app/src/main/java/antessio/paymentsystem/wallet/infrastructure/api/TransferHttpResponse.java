@@ -1,6 +1,6 @@
 package antessio.paymentsystem.wallet.infrastructure.api;
 
-import antessio.paymentsystem.wallet.Amount;
+import antessio.paymentsystem.common.Amount;
 
 public class TransferHttpResponse {
     private String id;

@@ -1,6 +1,6 @@
 package antessio.paymentsystem.api.wallet;
 
-import antessio.paymentsystem.wallet.Amount;
+import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.wallet.WalletID;
 
 public class WalletFundsLockCommand {

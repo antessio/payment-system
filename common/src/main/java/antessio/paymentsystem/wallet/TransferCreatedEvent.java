@@ -1,5 +1,7 @@
 package antessio.paymentsystem.wallet;
 
+import antessio.paymentsystem.common.Amount;
+
 public class TransferCreatedEvent {
     private TransferId id;
     private TransferDirection direction;

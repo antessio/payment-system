@@ -1,4 +1,4 @@
-package antessio.paymentsystem.wallet;
+package antessio.paymentsystem.common;
 
 public class Amount {
     private Long amountUnit;
