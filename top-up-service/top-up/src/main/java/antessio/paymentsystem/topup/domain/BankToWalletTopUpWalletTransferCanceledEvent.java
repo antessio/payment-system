@@ -2,18 +2,20 @@ package antessio.paymentsystem.topup.domain;
 
 import org.jmolecules.event.annotation.DomainEvent;
 
+import antessio.paymentsystem.topup.TopUpId;
+
 @DomainEvent
 public class BankToWalletTopUpWalletTransferCanceledEvent {
 
-    private final TopUp.TopUpId id;
+    private final TopUpId id;
     private final WalletTransfer walletTransfer;
 
-    public BankToWalletTopUpWalletTransferCanceledEvent(TopUp.TopUpId id, WalletTransfer walletTransfer) {
+    public BankToWalletTopUpWalletTransferCanceledEvent(TopUpId id, WalletTransfer walletTransfer) {
         this.id = id;
         this.walletTransfer = walletTransfer;
     }
 
-    public TopUp.TopUpId getId() {
+    public TopUpId getId() {
         return id;
     }
 

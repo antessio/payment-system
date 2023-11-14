@@ -6,6 +6,7 @@ import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.common.Message;
 import antessio.paymentsystem.common.MessageBroker;
 import antessio.paymentsystem.common.SerializationService;
+import antessio.paymentsystem.topup.TopUpId;
 
 @Service
 public class BankToWalletDomainService {
@@ -25,7 +26,7 @@ public class BankToWalletDomainService {
             Wallet wallet,
             Amount amount) {
         BankToWalletTopUp bankToWalletTopUp = new BankToWalletTopUp(
-                TopUp.TopUpId.generate(),
+                TopUpId.generate(),
                 amount,
                 wallet,
                 bankAccount);

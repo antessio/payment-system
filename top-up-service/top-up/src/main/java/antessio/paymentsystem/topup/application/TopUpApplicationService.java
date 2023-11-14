@@ -1,20 +1,25 @@
 package antessio.paymentsystem.topup.application;
 
 import java.util.Map;
+import java.util.Optional;
 
 import antessio.paymentsystem.common.Amount;
+import antessio.paymentsystem.topup.TopUpService;
 import antessio.paymentsystem.topup.domain.BankAccount;
 import antessio.paymentsystem.topup.domain.BankToWalletDomainService;
 import antessio.paymentsystem.topup.domain.BankToWalletTopUp;
 import antessio.paymentsystem.topup.domain.BankTransfer;
 import antessio.paymentsystem.topup.domain.BankTransferService;
 import antessio.paymentsystem.topup.domain.TopUp;
+import antessio.paymentsystem.topup.TopUpId;
 import antessio.paymentsystem.topup.domain.TopUpRepository;
 import antessio.paymentsystem.topup.domain.Wallet;
 import antessio.paymentsystem.topup.domain.WalletTransfer;
 import antessio.paymentsystem.topup.domain.WalletTransferService;
+import antessio.paymentsystem.topup.dto.BankToWalletTopUpCreateDto;
+import antessio.paymentsystem.topup.dto.TopUpDto;
 
-public class TopUpApplicationService {
+public class TopUpApplicationService implements TopUpService {
 
     private final TopUpRepository topUpRepository;
     private final BankToWalletDomainService bankToWalletDomainService;
@@ -43,20 +48,20 @@ public class TopUpApplicationService {
         return bankToWalletDomainService.create(from, to, amount);
     }
 
-    public void processBankTransfer(TopUp.TopUpId topUpId) {
+    public void processBankTransfer(TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
         topUpProcessor.processBankTransfer(topUp);
 
     }
 
-    public void processWalletTransfer(TopUp.TopUpId topUpId) {
+    public void processWalletTransfer(TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
         topUpProcessor.processWalletTransfer(topUp);
     }
 
-    public void markAsInProgress(TopUp.TopUpId topUpId) {
+    public void markAsInProgress(TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
         topUpProcessor.markAsInProgress(topUp);
@@ -69,7 +74,7 @@ public class TopUpApplicationService {
         topUpProcessor.bankTransferExecuted(topUp);
     }
 
-    public void confirmWalletTransfer(TopUp.TopUpId topUpId) {
+    public void confirmWalletTransfer(TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
         topUpProcessor.confirmWalletTransfer(topUp);
@@ -88,15 +93,32 @@ public class TopUpApplicationService {
         topUpProcessor.processBankTransferFailed(topUp);
     }
 
-    public void processTopUpCanceled(TopUp.TopUpId topUpId) {
+    public void processTopUpCanceled(TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
         topUpProcessor.processTopUpCanceled(topUp);
     }
 
+    @Override
+    public Optional<TopUpDto> loadById(TopUpId id) {
+        return topUpRepository.loadById(id)
+                              .map(t -> new TopUpDto(t.getId(), t.getAmount(), t.getStatus()));
+    }
+
+    @Override
+    public TopUpId createBankToWalletTopUp(BankToWalletTopUpCreateDto createDto) {
+        BankToWalletTopUp bankToWalletTopUp = createBankToWalletTopUp(
+                createDto.getAmount(),
+                new BankAccount(createDto.getBankAccountId()),
+                new Wallet(createDto.getWalletId()));
+        return bankToWalletTopUp.getId();
+    }
+
     class TopUpProcessor implements TopUpProcessingStrategy {
 
-        private final Map<Class<? extends TopUp>, TopUpProcessingStrategy> strategies = Map.of(BankToWalletTopUp.class, new BankToWalletTopUpProcessingStrategy());
+        private final Map<Class<? extends TopUp>, TopUpProcessingStrategy> strategies = Map.of(
+                BankToWalletTopUp.class,
+                new BankToWalletTopUpProcessingStrategy());
 
 
         @Override

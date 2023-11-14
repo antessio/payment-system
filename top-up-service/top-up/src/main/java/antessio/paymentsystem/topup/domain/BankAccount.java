@@ -2,6 +2,8 @@ package antessio.paymentsystem.topup.domain;
 
 import org.jmolecules.ddd.annotation.ValueObject;
 
+import antessio.paymentsystem.topup.BankAccountId;
+
 @ValueObject
 public class BankAccount {
     private BankAccountId bankAccountId;
@@ -12,19 +14,6 @@ public class BankAccount {
 
     public BankAccountId getBankAccountId() {
         return bankAccountId;
-    }
-
-    public static class BankAccountId {
-        private String id;
-
-        public BankAccountId(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
-
     }
 
 }

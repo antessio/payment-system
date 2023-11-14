@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.jmolecules.ddd.annotation.AggregateRoot;
 
 import antessio.paymentsystem.common.Amount;
+import antessio.paymentsystem.topup.TopUpId;
 
 @AggregateRoot
 public class BankToWalletTopUp extends TopUp {
