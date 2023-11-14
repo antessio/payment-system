@@ -4,18 +4,10 @@ package antessio.paymentsystem.topup.domain;
 import org.jmolecules.ddd.annotation.ValueObject;
 
 @ValueObject
-public class Wallet {
-    private WalletId walletId;
-
-    public Wallet(WalletId walletId) {
-        this.walletId = walletId;
-    }
-
-    public WalletId getWalletId() {
-        return walletId;
-    }
+public record Wallet(antessio.paymentsystem.topup.domain.Wallet.WalletId walletId) {
 
     public static class WalletId {
+
         private String id;
 
         public WalletId(String id) {

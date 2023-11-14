@@ -8,4 +8,6 @@ public interface WalletTransferService {
 
     void confirmWalletTransfer(WalletTransfer.WalletTransferId id);
 
+    void cancelWalletTransfer(WalletTransfer.WalletTransferId id);
+
 }

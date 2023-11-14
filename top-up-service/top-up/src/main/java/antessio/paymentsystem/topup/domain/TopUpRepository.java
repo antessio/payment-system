@@ -11,4 +11,8 @@ public interface TopUpRepository {
 
     Optional<TopUp> loadById(TopUp.TopUpId topUpId);
 
+    Optional<TopUp> loadTopUpByBankTransferId(BankTransfer.BankTransferId bankTransferId);
+
+    Optional<TopUp> loadByWalletTransferId(WalletTransfer.WalletTransferId walletTransferId);
+
 }

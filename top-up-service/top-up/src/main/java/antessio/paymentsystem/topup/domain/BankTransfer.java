@@ -4,23 +4,8 @@ import org.jmolecules.ddd.annotation.ValueObject;
 
 
 @ValueObject
-public class BankTransfer {
-    private BankTransferId id;
-    private BankTransferStatus status;
-
-    public BankTransfer(BankTransferId id,
-                        BankTransferStatus status) {
-        this.id = id;
-        this.status = status;
-    }
-
-    public BankTransferId getId() {
-        return id;
-    }
-
-    public BankTransferStatus getStatus() {
-        return status;
-    }
+public record BankTransfer(antessio.paymentsystem.topup.domain.BankTransfer.BankTransferId id,
+                           antessio.paymentsystem.topup.domain.BankTransfer.BankTransferStatus status) {
 
     public static class BankTransferId {
 
@@ -36,11 +21,11 @@ public class BankTransfer {
 
     }
 
-    public enum BankTransferStatus{
+    public enum BankTransferStatus {
         REQUESTED,
         EXECUTED,
         REVERSED,
-        CANCELED
+        FAILED
 
     }
 

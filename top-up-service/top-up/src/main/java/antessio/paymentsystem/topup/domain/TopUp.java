@@ -43,8 +43,8 @@ public abstract class TopUp {
         return status;
     }
 
-    protected void execute(){
-        this.status = TopUpStatus.EXECUTED;
+    protected void complete(){
+        this.status = TopUpStatus.COMPLETED;
     }
     protected void cancel(){
         this.status = TopUpStatus.CANCELED;
@@ -66,7 +66,7 @@ public abstract class TopUp {
         /**
          * Top-up completed successfully
          */
-        EXECUTED,
+        COMPLETED,
         /**
          * Top-up canceled before execution
          */

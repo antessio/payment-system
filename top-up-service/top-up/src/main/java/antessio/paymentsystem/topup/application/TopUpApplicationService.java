@@ -1,5 +1,7 @@
 package antessio.paymentsystem.topup.application;
 
+import java.util.Map;
+
 import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.topup.domain.BankAccount;
 import antessio.paymentsystem.topup.domain.BankToWalletDomainService;
@@ -20,6 +22,8 @@ public class TopUpApplicationService {
 
     private final WalletTransferService walletTransferService;
 
+    private final TopUpProcessor topUpProcessor;
+
     public TopUpApplicationService(
             TopUpRepository topUpRepository,
             BankToWalletDomainService bankToWalletDomainService,
@@ -29,71 +33,219 @@ public class TopUpApplicationService {
         this.bankToWalletDomainService = bankToWalletDomainService;
         this.bankTransferService = bankTransferService;
         this.walletTransferService = walletTransferService;
+        topUpProcessor = new TopUpProcessor();
     }
 
-    public TopUp createBankToWalletTopUp(Amount amount, BankAccount from, Wallet to) {
+    public BankToWalletTopUp createBankToWalletTopUp(
+            Amount amount,
+            BankAccount from,
+            Wallet to) {
         return bankToWalletDomainService.create(from, to, amount);
     }
 
     public void processBankTransfer(TopUp.TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
-        if (topUp instanceof BankToWalletTopUp bankToWalletTopUp) {
-            BankTransfer bankTransfer = bankTransferService.createBankTransfer(
-                    bankToWalletTopUp.getBankAccount(),
-                    bankToWalletTopUp.getAmount());
-            bankToWalletDomainService.bankTransferCreated(
-                    bankToWalletTopUp, bankTransfer.getId());
-        } else {
-            throw new IllegalArgumentException("bank transfer can't be processed for inconsistent top-up type");
-        }
+        topUpProcessor.processBankTransfer(topUp);
 
     }
 
     public void processWalletTransfer(TopUp.TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
-        if (topUp instanceof BankToWalletTopUp bankToWalletTopUp) {
-            WalletTransfer walletTransfer = walletTransferService.createWalletTransfer(bankToWalletTopUp.getWallet(), bankToWalletTopUp.getAmount());
-            bankToWalletDomainService.walletTransferCreated(
-                    bankToWalletTopUp, walletTransfer.getId());
-        } else {
-            throw new IllegalArgumentException("bank transfer can't be processed for inconsistent top-up type");
-        }
+        topUpProcessor.processWalletTransfer(topUp);
     }
 
     public void markAsInProgress(TopUp.TopUpId topUpId) {
         TopUp topUp = topUpRepository.loadById(topUpId)
                                      .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
-        if (topUp instanceof BankToWalletTopUp bankToWalletTopUp) {
+        topUpProcessor.markAsInProgress(topUp);
+
+    }
+
+    public void bankTransferExecuted(BankTransfer.BankTransferId bankTransferId) {
+        TopUp topUp = topUpRepository.loadTopUpByBankTransferId(bankTransferId)
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with bank transfer id id %s doesn't exist".formatted(bankTransferId.getId())));
+        topUpProcessor.bankTransferExecuted(topUp);
+    }
+
+    public void confirmWalletTransfer(TopUp.TopUpId topUpId) {
+        TopUp topUp = topUpRepository.loadById(topUpId)
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
+        topUpProcessor.confirmWalletTransfer(topUp);
+    }
+
+    public void processWalletTransferFailed(WalletTransfer.WalletTransferId walletTransferId) {
+        TopUp topUp = topUpRepository.loadByWalletTransferId(walletTransferId)
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with wallet transfer id %s doesn't exist".formatted(
+                                             walletTransferId.getId())));
+        topUpProcessor.processWalletTransferFailed(topUp);
+    }
+
+    public void processBankTransferFailed(BankTransfer.BankTransferId bankTransferId) {
+        TopUp topUp = topUpRepository.loadTopUpByBankTransferId(bankTransferId)
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with bank transfer id id %s doesn't exist".formatted(bankTransferId.getId())));
+        topUpProcessor.processBankTransferFailed(topUp);
+    }
+
+    public void processTopUpCanceled(TopUp.TopUpId topUpId) {
+        TopUp topUp = topUpRepository.loadById(topUpId)
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
+        topUpProcessor.processTopUpCanceled(topUp);
+    }
+
+    class TopUpProcessor implements TopUpProcessingStrategy {
+
+        private final Map<Class<? extends TopUp>, TopUpProcessingStrategy> strategies = Map.of(BankToWalletTopUp.class, new BankToWalletTopUpProcessingStrategy());
+
+
+        @Override
+        public void processBankTransfer(TopUp topUp) {
+            getStrategy(topUp.getClass()).processBankTransfer(topUp);
+        }
+
+        @Override
+        public void processWalletTransfer(TopUp topUp) {
+            getStrategy(topUp.getClass()).processWalletTransfer(topUp);
+        }
+
+        @Override
+        public void markAsInProgress(TopUp topUp) {
+            getStrategy(topUp.getClass()).markAsInProgress(topUp);
+        }
+
+        @Override
+        public void bankTransferExecuted(TopUp topUp) {
+            getStrategy(topUp.getClass()).bankTransferExecuted(topUp);
+        }
+
+        @Override
+        public void confirmWalletTransfer(TopUp topUp) {
+            getStrategy(topUp.getClass()).confirmWalletTransfer(topUp);
+        }
+
+        @Override
+        public void processBankTransferFailed(TopUp topUp) {
+            getStrategy(topUp.getClass()).processBankTransferFailed(topUp);
+        }
+
+        @Override
+        public void processWalletTransferFailed(TopUp topUp) {
+            getStrategy(topUp.getClass()).processWalletTransferFailed(topUp);
+        }
+
+        @Override
+        public void processTopUpCanceled(TopUp topUp) {
+            getStrategy(topUp.getClass()).processBankTransfer(topUp);
+        }
+
+        private TopUpProcessingStrategy getStrategy(Class<? extends TopUp> topUpClass) {
+
+            return strategies
+                    .entrySet()
+                    .stream()
+                    .filter(e -> e.getKey().isAssignableFrom(topUpClass))
+                    .findFirst()
+                    .map(Map.Entry::getValue)
+                    .orElseThrow(() -> new IllegalArgumentException("top-up class %s not handled".formatted(topUpClass)));
+        }
+
+    }
+
+    class BankToWalletTopUpProcessingStrategy implements TopUpProcessingStrategy {
+
+        public Class<BankToWalletTopUp> getTopUpClass() {
+            return BankToWalletTopUp.class;
+        }
+
+        private BankToWalletTopUp castBankToWalletTopUp(TopUp topUp) {
+            return getTopUpClass().cast(topUp);
+        }
+
+        @Override
+        public void processBankTransfer(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
+            BankTransfer bankTransfer = bankTransferService.createBankTransfer(
+                    bankToWalletTopUp.getBankAccount(),
+                    bankToWalletTopUp.getAmount());
+            bankToWalletDomainService.bankTransferCreated(
+                    bankToWalletTopUp, bankTransfer.id());
+        }
+
+        @Override
+        public void processWalletTransfer(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
+            WalletTransfer walletTransfer = walletTransferService.createWalletTransfer(bankToWalletTopUp.getWallet(), bankToWalletTopUp.getAmount());
+            bankToWalletDomainService.walletTransferCreated(
+                    bankToWalletTopUp, walletTransfer.id());
+        }
+
+        @Override
+        public void markAsInProgress(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
             bankToWalletDomainService.markAsInProgress(bankToWalletTopUp);
-        } else {
-            throw new IllegalArgumentException("bank transfer can't be processed for inconsistent top-up type");
+
         }
 
-    }
-
-    public void bankTransferExecuted(TopUp.TopUpId topUpId, BankTransfer.BankTransferId bankTransferId) {
-        TopUp topUp = topUpRepository.loadById(topUpId)
-                                     .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
-        if (topUp instanceof BankToWalletTopUp bankToWalletTopUp) {
-            bankToWalletDomainService.bankTransferExecuted(bankToWalletTopUp, bankTransferId);
-        } else {
-            throw new IllegalArgumentException("bank transfer can't be processed for inconsistent top-up type");
+        @Override
+        public void bankTransferExecuted(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
+            bankToWalletDomainService.bankTransferExecuted(bankToWalletTopUp);
         }
-    }
 
-    public void confirmWalletTransfer(TopUp.TopUpId topUpId){
-        TopUp topUp = topUpRepository.loadById(topUpId)
-                                     .orElseThrow(() -> new IllegalArgumentException("top-up with id %s doesn't exist".formatted(topUpId.getId().toString())));
-        if (topUp instanceof BankToWalletTopUp bankToWalletTopUp) {
+        @Override
+        public void confirmWalletTransfer(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
             WalletTransfer walletTransfer = bankToWalletTopUp.getWalletTransfer()
                                                              .orElseThrow(() -> new IllegalStateException("top-up has no wallet transfer"));
-            walletTransferService.confirmWalletTransfer(walletTransfer.getId());
-            bankToWalletDomainService.walletTransferExecuted(bankToWalletTopUp, walletTransfer.getId());
-        } else {
-            throw new IllegalArgumentException("bank transfer can't be processed for inconsistent top-up type");
+            walletTransferService.confirmWalletTransfer(walletTransfer.id());
+            bankToWalletDomainService.complete(bankToWalletTopUp, walletTransfer.id());
         }
+
+        @Override
+        public void processBankTransferFailed(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
+            bankToWalletDomainService.markBankTransferFailed(bankToWalletTopUp);
+        }
+
+        @Override
+        public void processWalletTransferFailed(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
+            WalletTransfer walletTransfer = bankToWalletTopUp.getWalletTransfer()
+                                                             .orElseThrow(() -> new IllegalStateException("top-up has no wallet transfer"));
+            walletTransferService.confirmWalletTransfer(walletTransfer.id());
+            bankToWalletDomainService.complete(bankToWalletTopUp, walletTransfer.id());
+        }
+
+        @Override
+        public void processTopUpCanceled(TopUp topUp) {
+            BankToWalletTopUp bankToWalletTopUp = castBankToWalletTopUp(topUp);
+            WalletTransfer walletTransfer = bankToWalletTopUp.getWalletTransfer()
+                                                             .orElseThrow(() -> new IllegalStateException("top-up has no wallet transfer"));
+            walletTransferService.cancelWalletTransfer(walletTransfer.id());
+            bankToWalletDomainService.markWalletTransferCanceled(bankToWalletTopUp, walletTransfer.id());
+        }
+
+    }
+
+    interface TopUpProcessingStrategy {
+
+        void processBankTransfer(TopUp topUp);
+
+        void processWalletTransfer(TopUp topUp);
+
+        void markAsInProgress(TopUp topUp);
+
+        void bankTransferExecuted(TopUp topUp);
+
+        void confirmWalletTransfer(TopUp topUp);
+
+        void processBankTransferFailed(TopUp topUp);
+
+        void processWalletTransferFailed(TopUp topUp);
+
+        void processTopUpCanceled(TopUp topUp);
+
     }
 
 }

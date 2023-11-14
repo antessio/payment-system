@@ -29,7 +29,7 @@ public class BankToWalletDomainService {
                 amount,
                 wallet,
                 bankAccount);
-        topUpRepository.save(bankToWalletTopUp);
+        save(bankToWalletTopUp);
         publish(new BankToWalletTopUpRequestedEvent(
                 bankToWalletTopUp.getId(),
                 bankToWalletTopUp.getAmount(),
@@ -39,39 +39,60 @@ public class BankToWalletDomainService {
     }
 
     public void bankTransferCreated(BankToWalletTopUp topUp, BankTransfer.BankTransferId bankTransferId) {
-        topUp.bankTransferCreated(bankTransferId);
-        topUpRepository.save(topUp);
+        topUp.markBankTransferCreated(bankTransferId);
+        save(topUp);
         publish(new BankToWalletTopUpBankTransferCreatedEvent(topUp.getId(), bankTransferId), "top-up-bank-transfer-created");
     }
 
     public void walletTransferCreated(BankToWalletTopUp topUp, WalletTransfer.WalletTransferId walletTransferId) {
-        topUp.walletTransferCreated(walletTransferId);
-        topUpRepository.save(topUp);
-        publish(new BankToWalletTopUpWalletTransferCreatedEvent(topUp.getId(), walletTransferId), "top-up-bank-transfer-created");
+        topUp.markWalletTransferCreated(walletTransferId);
+        save(topUp);
+        publish(new BankToWalletTopUpWalletTransferCreatedEvent(topUp.getId(), walletTransferId), "top-up-wallet-transfer-created");
     }
 
     public void markAsInProgress(
             BankToWalletTopUp bankToWalletTopUp) {
         bankToWalletTopUp.markAsInProgress();
-        topUpRepository.save(bankToWalletTopUp);
-        publish(new BankToWalletTopUpMarkedAsInProgressEvent(bankToWalletTopUp.getId()), "top-up-marked-as-in-progress");
+        save(bankToWalletTopUp);
+        publish(new TopUpMarkedAsInProgressEvent(bankToWalletTopUp.getId()), "top-up-marked-as-in-progress");
     }
 
-    public void bankTransferExecuted(BankToWalletTopUp bankToWalletTopUp, BankTransfer.BankTransferId bankTransferId) {
+    public void bankTransferExecuted(BankToWalletTopUp bankToWalletTopUp) {
 
-        bankToWalletTopUp.bankTransferExecuted(bankTransferId);
+        bankToWalletTopUp.markBankTransferExecuted();
         BankTransfer bankTransferUpdated = bankToWalletTopUp.getBankTransfer()
                                                             .orElseThrow();
-        topUpRepository.save(bankToWalletTopUp);
+        save(bankToWalletTopUp);
         publish(new BankToWalletTopUpBankTransferExecutedEvent(bankToWalletTopUp.getId(), bankTransferUpdated), "top-up-bank-transfer-executed");
+    }
+
+    public void complete(BankToWalletTopUp bankToWalletTopUp, WalletTransfer.WalletTransferId walletTransferId) {
+        bankToWalletTopUp.complete(walletTransferId);
+        save(bankToWalletTopUp);
+        WalletTransfer updatedWalletTransfer = bankToWalletTopUp.getWalletTransfer().orElseThrow();
+        publish(new BankToWalletTopUpCompletedEvent(bankToWalletTopUp.getId(), updatedWalletTransfer), "top-up-completed");
+    }
+
+    public void markBankTransferFailed(BankToWalletTopUp bankToWalletTopUp) {
+        bankToWalletTopUp.markBankTransferFailed();
+        save(bankToWalletTopUp);
+        publish(new BankToWalletTopUpCanceledEvent(bankToWalletTopUp.getId(), "bank-transfer-failed"), "top-up-canceled");
+    }
+
+    public void markWalletTransferCanceled(BankToWalletTopUp bankToWalletTopUp, WalletTransfer.WalletTransferId walletTransferId) {
+        bankToWalletTopUp.markWalletTransferCanceled(walletTransferId);
+        save(bankToWalletTopUp);
+        WalletTransfer updatedWalletTransfer = bankToWalletTopUp.getWalletTransfer().orElseThrow();
+        publish(new BankToWalletTopUpWalletTransferCanceledEvent(bankToWalletTopUp.getId(), updatedWalletTransfer), "top-up-wallet-transfer-canceled");
+
+    }
+
+    private void save(BankToWalletTopUp bankToWalletTopUp) {
+        topUpRepository.save(bankToWalletTopUp);
     }
 
     private void publish(Object event, String eventName) {
         messageBroker.sendMessage(Message.of(eventName, serializationService.serialize(event)));
-    }
-
-    public void walletTransferExecuted(BankToWalletTopUp bankToWalletTopUp, WalletTransfer.WalletTransferId walletTransferId) {
-        bankToWalletTopUp.walletTransferExecuted(walletTransferId);
     }
 
 }
