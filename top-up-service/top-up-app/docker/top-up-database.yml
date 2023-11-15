@@ -1,0 +1,14 @@
+version: '3'
+services:
+  top-up-database:
+    image: "postgres" # use latest official postgres version
+    environment:
+      - POSTGRES_USER=topup
+      - POSTGRES_PASSWORD=topup
+      - POSTGRES_DB=topup
+    volumes:
+      - top-up-database-data:/var/lib/postgresql/data/ # persist data even if container shuts down
+    ports:
+      - "5432:5432"
+volumes:
+  top-up-database-data: # named volumes can be managed easier using docker-compose
