@@ -3,6 +3,7 @@ package antessio.paymentsystem.topup.application;
 import java.util.Map;
 import java.util.Optional;
 
+import antessio.paymentsystem.bank.BankTransferId;
 import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.topup.TopUpService;
 import antessio.paymentsystem.topup.domain.BankAccount;
@@ -68,9 +69,9 @@ public class TopUpApplicationService implements TopUpService {
 
     }
 
-    public void bankTransferExecuted(BankTransfer.BankTransferId bankTransferId) {
+    public void bankTransferExecuted(BankTransferId bankTransferId) {
         TopUp topUp = topUpRepository.loadTopUpByBankTransferId(bankTransferId)
-                                     .orElseThrow(() -> new IllegalArgumentException("top-up with bank transfer id id %s doesn't exist".formatted(bankTransferId.getId())));
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with bank transfer id id %s doesn't exist".formatted(bankTransferId.id())));
         topUpProcessor.bankTransferExecuted(topUp);
     }
 
@@ -87,9 +88,9 @@ public class TopUpApplicationService implements TopUpService {
         topUpProcessor.processWalletTransferFailed(topUp);
     }
 
-    public void processBankTransferFailed(BankTransfer.BankTransferId bankTransferId) {
+    public void processBankTransferFailed(BankTransferId bankTransferId) {
         TopUp topUp = topUpRepository.loadTopUpByBankTransferId(bankTransferId)
-                                     .orElseThrow(() -> new IllegalArgumentException("top-up with bank transfer id id %s doesn't exist".formatted(bankTransferId.getId())));
+                                     .orElseThrow(() -> new IllegalArgumentException("top-up with bank transfer id id %s doesn't exist".formatted(bankTransferId.id())));
         topUpProcessor.processBankTransferFailed(topUp);
     }
 

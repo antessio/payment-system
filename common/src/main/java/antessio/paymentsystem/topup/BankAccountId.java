@@ -1,14 +1,16 @@
 package antessio.paymentsystem.topup;
 
+import java.util.UUID;
+
 public class BankAccountId {
 
-    private String id;
+    private UUID id;
 
-    public BankAccountId(String id) {
+    public BankAccountId(UUID id) {
         this.id = id;
     }
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 

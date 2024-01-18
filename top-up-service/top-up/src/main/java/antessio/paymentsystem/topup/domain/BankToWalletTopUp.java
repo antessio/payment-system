@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.jmolecules.ddd.annotation.AggregateRoot;
 
+import antessio.paymentsystem.bank.BankTransferId;
+import antessio.paymentsystem.bank.BankTransferStatus;
 import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.topup.TopUpId;
 
@@ -57,11 +59,11 @@ public class BankToWalletTopUp extends TopUp {
      * Links a bank transfer requested to this top-up
      * @param bankTransferId
      */
-    void markBankTransferCreated(BankTransfer.BankTransferId bankTransferId) {
+    void markBankTransferCreated(BankTransferId bankTransferId) {
         if (getBankTransfer().isPresent()) {
             throw new IllegalArgumentException("bank transfer already created");
         }
-        this.bankTransfer = new BankTransfer(bankTransferId, BankTransfer.BankTransferStatus.REQUESTED);
+        this.bankTransfer = new BankTransfer(bankTransferId, BankTransferStatus.REQUESTED);
     }
 
 
@@ -80,7 +82,7 @@ public class BankToWalletTopUp extends TopUp {
      * Marks the bank account linked to this top-up as executed
      */
     void markBankTransferExecuted() {
-        updateBankTransferStatus(BankTransfer.BankTransferStatus.EXECUTED);
+        updateBankTransferStatus(BankTransferStatus.EXECUTED);
     }
 
     /**
@@ -96,7 +98,7 @@ public class BankToWalletTopUp extends TopUp {
      * Marks the bank transfer as failed and cancels this top-up (updates the status)
      */
     public void markBankTransferFailed() {
-        updateBankTransferStatus(BankTransfer.BankTransferStatus.FAILED);
+        updateBankTransferStatus(BankTransferStatus.FAILED);
         cancel();
     }
 
@@ -104,14 +106,14 @@ public class BankToWalletTopUp extends TopUp {
         updateWalletTransferStatus(walletTransferId, WalletTransfer.WalletTransferStatus.CANCELED);
     }
 
-    private void updateBankTransferStatus(BankTransfer.BankTransferId bankTransferId, BankTransfer.BankTransferStatus newBankTransferStatus) {
+    private void updateBankTransferStatus(BankTransferId bankTransferId, BankTransferStatus newBankTransferStatus) {
         if (getBankTransfer().filter(bt -> bt.id().equals(bankTransferId)).isEmpty()) {
             throw new IllegalArgumentException("bank transfer is different from expected for this top-up");
         }
         this.bankTransfer = new BankTransfer(this.bankTransfer.id(), newBankTransferStatus);
     }
-    private void updateBankTransferStatus(BankTransfer.BankTransferStatus newBankTransferStatus) {
-        BankTransfer.BankTransferId bankTransferId = getBankTransfer()
+    private void updateBankTransferStatus(BankTransferStatus newBankTransferStatus) {
+        BankTransferId bankTransferId = getBankTransfer()
                 .map(BankTransfer::id)
                 .orElseThrow(() -> new IllegalArgumentException("bank transfer is empty for this top-up"));
         updateBankTransferStatus(bankTransferId, newBankTransferStatus);

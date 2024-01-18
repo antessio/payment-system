@@ -1,6 +1,19 @@
 # payment-system
 A simple payment system
 
+TODO: 
+- move to a distributed modular monolith architecture:  
+  - consumer:
+    - customer-service (as separate app)
+    - consumer-gateway
+    - customer-aggregator
+  - core:
+    - wallet
+    - top-up
+    - bank-service
+  - business:
+    - 
+
 ## wallet service
 
 Keeps information about the users (business and consumer) wallets and the movements 

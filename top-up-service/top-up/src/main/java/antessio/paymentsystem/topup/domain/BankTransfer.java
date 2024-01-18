@@ -2,31 +2,13 @@ package antessio.paymentsystem.topup.domain;
 
 import org.jmolecules.ddd.annotation.ValueObject;
 
+import antessio.paymentsystem.bank.BankTransferId;
+import antessio.paymentsystem.bank.BankTransferStatus;
+
 
 @ValueObject
-public record BankTransfer(antessio.paymentsystem.topup.domain.BankTransfer.BankTransferId id,
-                           antessio.paymentsystem.topup.domain.BankTransfer.BankTransferStatus status) {
+public record BankTransfer(BankTransferId id,
+                           BankTransferStatus status) {
 
-    public static class BankTransferId {
-
-        private String id;
-
-        public BankTransferId(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-    }
-
-    public enum BankTransferStatus {
-        REQUESTED,
-        EXECUTED,
-        REVERSED,
-        FAILED
-
-    }
 
 }

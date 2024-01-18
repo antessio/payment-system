@@ -2,6 +2,7 @@ package antessio.paymentsystem.topup.domain;
 
 import org.jmolecules.ddd.annotation.Service;
 
+import antessio.paymentsystem.bank.BankTransferId;
 import antessio.paymentsystem.common.Amount;
 import antessio.paymentsystem.common.Message;
 import antessio.paymentsystem.common.MessageBroker;
@@ -39,7 +40,7 @@ public class BankToWalletDomainService {
         return bankToWalletTopUp;
     }
 
-    public void bankTransferCreated(BankToWalletTopUp topUp, BankTransfer.BankTransferId bankTransferId) {
+    public void bankTransferCreated(BankToWalletTopUp topUp, BankTransferId bankTransferId) {
         topUp.markBankTransferCreated(bankTransferId);
         save(topUp);
         publish(new BankToWalletTopUpBankTransferCreatedEvent(topUp.getId(), bankTransferId), "top-up-bank-transfer-created");
