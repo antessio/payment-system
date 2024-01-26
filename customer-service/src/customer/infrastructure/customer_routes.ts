@@ -24,7 +24,15 @@ function convertToDTO(customer: Customer): CustomerDto {
 
 function customerRoutes(customerService: CustomerServiceInterface) {
     router.get('/', async (req: Request, res: Response) => {
-        const customers = (await customerService.getAllCustomers())
+
+        let getCustomers = customerService.getAllCustomers()
+        const email = req.query.email as string
+        if (email) {
+            getCustomers = customerService.getCustomerByEmail(email)
+                .then(c => c ? [c] : [])
+        }
+
+        const customers = (await getCustomers)
             .map(c => convertToDTO(c));
         res.json(customers);
 

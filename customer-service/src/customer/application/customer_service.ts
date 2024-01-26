@@ -1,15 +1,19 @@
 import {
-    Customer, CustomerCreateCommand,
+    Customer,
+    CustomerCreateCommand,
     CustomerCreatedEvent,
     CustomerDeleted,
     CustomerDomainEvent,
     CustomerEmailUpdated,
     CustomerIbanUpdated,
-    CustomerNameUpdated, CustomerUpdateCommand, CustomerUpdateEmailCommand, CustomerUpdateIbanCommand, CustomerUpdateNameCommand
+    CustomerNameUpdated,
+    CustomerUpdateCommand,
+    CustomerUpdateEmailCommand,
+    CustomerUpdateIbanCommand,
+    CustomerUpdateNameCommand
 } from "../domain/customer_model";
 import {CustomerRepository} from "../domain/customer_repository";
 import {CustomerMessageBroker} from "../domain/customer_message_broker";
-import {v4 as uuidv4} from 'uuid';
 import {CustomerAlreadyExistError, CustomerNotExistingError} from "../domain/customer_error";
 
 
@@ -26,6 +30,8 @@ export interface CustomerServiceInterface {
     updateCustomerIban(id: string, updateCommand: CustomerUpdateIbanCommand): Promise<Customer|null>;
 
     deleteCustomer(id: string): Promise<void>;
+
+    getCustomerByEmail(email: string): Promise<Customer | null>;
 }
 
 export class CustomerService implements CustomerServiceInterface {
@@ -44,7 +50,7 @@ export class CustomerService implements CustomerServiceInterface {
             }else{
 
                 return this.repository.saveCustomer(new Customer(
-                    uuidv4().toString(),
+                    this.repository.generateId(),
                     customerCreateCommand.name,
                     customerCreateCommand.email,
                     customerCreateCommand.iban))
@@ -207,6 +213,10 @@ export class CustomerService implements CustomerServiceInterface {
                         return Promise.resolve(updatedCustomer);
                     });
             });
+    }
+
+    getCustomerByEmail(email: string): Promise<Customer | null> {
+        return this.repository.loadByEmail(email);
     }
 
 

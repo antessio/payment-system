@@ -7,4 +7,5 @@ export interface CustomerRepository {
     updateCustomer(id: string, customer: Customer): Promise<Customer | null>;
     deleteCustomer(id: string): Promise<void>;
     loadByEmail(email: string): Promise<Customer | null>
+    generateId(): string
 }

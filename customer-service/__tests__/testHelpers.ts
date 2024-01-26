@@ -1,6 +1,7 @@
 import {Customer, CustomerDomainEvent} from "../src/customer/domain/customer_model";
 import {CustomerRepository} from "../src/customer/domain/customer_repository";
 import {CustomerMessageBroker} from "../src/customer/domain/customer_message_broker";
+import {randomUUID} from "crypto";
 
 
 export class InMemoryCustomerRepository implements CustomerRepository {
@@ -37,6 +38,10 @@ export class InMemoryCustomerRepository implements CustomerRepository {
 
     loadByEmail(email: string): Promise<Customer | null> {
         return Promise.resolve(this.customers.find(c => c.email == email) || null);
+    }
+
+    generateId(): string {
+        return randomUUID().toString();
     }
 }
 
